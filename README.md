@@ -14,10 +14,12 @@ These features include:
 
 # idée
 pré-requis :
-- marquage des pages
+- marquage des pages + id(avec interupteur dans le menu)
+- quand on clique sur un chiffre pour aller directement sur la page (ex : on appuie sur 7 ça va a la slide 7 directement) (ex : alt + chiffre)
 
 technique :
 - pouvoir voir la présentation en temps réel quand on modifie le markdown (de la page)
+- zoom static
 
 visuel :
 - avoir un theme par defaut (puis si possible pouvoir changer le thème)
