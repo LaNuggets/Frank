@@ -1,27 +1,7 @@
-# Frank
+# Tauri + Vue + TypeScript
 
-![Logo du projet](images/logo_transparent.png)
+This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
 
-The goal of this project, named **Frank**, is to build an application that allows users to create and display slide presentations similar to PowerPoint or Keynote, but where the content is defined using a Markdown and a CSS. The application is designed with features that are particularly useful for developers.
+## Recommended IDE Setup
 
-These features include:
-- **Displaying code snippets** within slides, with automatic scrolling when the code is longer than the available space (or without scrolling if the code fits). The code can be written directly in the slide or loaded from separate files.
-- **Executing commands** directly from a slide.
-
-### Collaborator
-[Aurelien DUGAST](https://github.com/LaNuggets/) and [Cassian JOLY](https://github.com/Cassian-J)
-
-
-# idée
-pré-requis :
-- marquage des pages + id(avec interupteur dans le menu)
-- quand on clique sur un chiffre pour aller directement sur la page (ex : on appuie sur 7 ça va a la slide 7 directement) (ex : alt + chiffre)
-
-technique :
-- pouvoir voir la présentation en temps réel quand on modifie le markdown (de la page)
-- zoom static
-
-visuel :
-- avoir un theme par defaut (puis si possible pouvoir changer le thème)
-- pouvoir re-size une image/vidéo/import de fichier en direct
-- transition 
+- [VS Code](https://code.visualstudio.com/) + [Vue - Official](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
