@@ -8,6 +8,20 @@ These features include:
 - **Displaying code snippets** within slides, with automatic scrolling when the code is longer than the available space (or without scrolling if the code fits). The code can be written directly in the slide or loaded from separate files.
 - **Executing commands** directly from a slide.
 
+### File Architecture
+```
+my-file/ 
+├── presentation.md
+├── config.json
+├── style.css
+├── assets/
+│ └── image files
+└── env/
+  ├── exe files
+  └── code files 
+```
+
+
 ### Collaborator
 [Aurelien DUGAST](https://github.com/LaNuggets/) and [Cassian JOLY](https://github.com/Cassian-J)
 
@@ -20,7 +34,7 @@ pré-requis :
 technique :
 - pouvoir voir la présentation en temps réel quand on modifie le markdown (de la page)
 - zoom static
-- ajout de markdown personaliser
+- ajout de markdown personaliser (enregistrement en html mais affichage en personalisé)
 
 visuel :
 - avoir un theme par defaut (puis si possible pouvoir changer le thème)
