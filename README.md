@@ -8,9 +8,14 @@ These features include:
 - **Displaying code snippets** within slides, with automatic scrolling when the code is longer than the available space (or without scrolling if the code fits). The code can be written directly in the slide or loaded from separate files.
 - **Executing commands** directly from a slide.
 
+### Collaborator
+[Aurelien DUGAST](https://github.com/LaNuggets/) and [Cassian JOLY](https://github.com/Cassian-J)
+
 ### File Architecture
+
+We use a specific file extension called `.codeprez`, which contains the following architecture:
 ```
-my-file/ 
+my-file.codeprez/ 
 ├── presentation.md
 ├── config.json
 ├── style.css
@@ -21,10 +26,25 @@ my-file/
   └── code files 
 ```
 
+### How to get Frank
 
-### Collaborator
-[Aurelien DUGAST](https://github.com/LaNuggets/) and [Cassian JOLY](https://github.com/Cassian-J)
-
+To use Frank, you first need to clone the project from GitHub by running:
+```bash
+git clone https://github.com/LaNuggets/Frank.git
+```
+Once the repository has been cloned, install all the dependencies required by the project by running:
+```bash
+cd Frank
+npm install
+```
+If any vulnerabilities are detected after installing the dependencies, run the following command to fix them:
+```bash
+npm audit fix --force
+```
+After completing these steps, you can finally start the program by running:
+```bash
+npm run tauri dev
+```
 
 # idée
 pré-requis :
