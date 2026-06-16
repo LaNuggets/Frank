@@ -1,38 +1,61 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
-const greetMsg = ref("");
-const name = ref("");
+import SaveAs from "./components/SaveAs.vue";
+import Save from "./components/Save.vue";
 
-async function greet() {
-  // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-  greetMsg.value = await invoke("greet", { name: name.value });
+import OpenProject from "./components/OpenProject.vue";
+import ReadFile from "./components/ReadFile.vue";
+import Writefile from "./components/WriteFile.vue";
+import Tree from "./components/Tree.vue";
+import CreateProject from "./components/CreateProject.vue";
+import ReadFileLines from "./components/ReadFileLines.vue";
+
+
+// Quick reminder off how the app save is content.
+// The logic is has follow; the user open a project, that's will create a tmp folder.
+// This tmp folder is the active workspace. That's where evreything is modified at first.
+// Then when the user gonna save is project with the 'zip_command',
+// this will take the tmp folder content and zip it to the given path.
+
+const workspace = ref<string | null>(null);
+function onWorkspaceReady(path: string) {
+    workspace.value = path;
 }
+
+
+// This part is for clearing the tmp file on the app closing
+const folder = ref();
+onMounted(async () => {
+    await getCurrentWindow().onCloseRequested(async () => {
+        try {
+            folder.value = await invoke<string[]>("clear_tmp_folder");
+        } catch (e) {
+            folder.value = e;
+        }
+    });
+});
+
+
 </script>
 
 <template>
   <main class="container">
-    <h1>Welcome to Tauri + Vue</h1>
+    <h1>Welcome to Frank</h1>
+    <CreateProject />
 
-    <div class="row">
-      <a href="https://vite.dev" target="_blank">
-        <img src="/vite.svg" class="logo vite" alt="Vite logo" />
-      </a>
-      <a href="https://tauri.app" target="_blank">
-        <img src="/tauri.svg" class="logo tauri" alt="Tauri logo" />
-      </a>
-      <a href="https://vuejs.org/" target="_blank">
-        <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-      </a>
-    </div>
-    <p>Click on the Tauri, Vite, and Vue logos to learn more.</p>
+    <SaveAs />
+    <Save />
 
-    <form class="row" @submit.prevent="greet">
-      <input id="greet-input" v-model="name" placeholder="Enter a name..." />
-      <button type="submit">Greet</button>
-    </form>
-    <p>{{ greetMsg }}</p>
+    <OpenProject />
+
+    <ReadFile />
+    <ReadFileLines />
+    <Writefile />
+
+    <Tree />
   </main>
 </template>
 
