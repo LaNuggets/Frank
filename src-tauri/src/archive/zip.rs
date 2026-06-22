@@ -1,8 +1,11 @@
 use std::{fs::File, path::Path, io::{self, Read, Write}};
 use std::path::PathBuf;
+use std::fmt;
 use zip::{ZipWriter, CompressionMethod, write::{ExtendedFileOptions, FileOptions}};
 
 use crate::helper::get_tmp_folder_path;
+
+use crate::error::AppError;
 
 
 #[tauri::command]
@@ -20,11 +23,15 @@ pub fn zip_command(zip_path: String, files_name: Vec<String>) -> Result<(), Stri
 }
 
 
-pub fn zip(zip_path: String, files_and_folders_name: Vec<String>) -> zip::result::ZipResult<()>{
+// pub fn zip(zip_path: String, files_and_folders_name: Vec<String>) -> zip::result::ZipResult<()>{
+pub fn zip(zip_path: String, files_and_folders_name: Vec<String>) -> Result<(), AppError>{
     let zip_path = ensure_codeprez_extension(PathBuf::from(zip_path));
     let (mut archive, options) = create_archive(zip_path)?;
 
     let (files, folders) = split_files_and_folders(files_and_folders_name);
+    if !check_main_file_validity(&files) {
+        return Err(AppError::MissingMainFiles);
+    }
     let (files_path, folders_path) = complete_file_and_folder_path(files, folders);
 
     zip_files(&mut archive, &options, files_path)?;
@@ -38,6 +45,18 @@ fn ensure_codeprez_extension(mut path: PathBuf) -> PathBuf {
     path.set_extension("codeprez");
 
     path
+}
+
+fn check_main_file_validity(files: &Vec<String>) -> bool {
+    for file in files {
+        if file != "style.css"
+        || file != "presentation.md"
+        || file != "config.json"
+        {
+            return false;
+        }
+    }
+    true
 }
 
 fn complete_file_and_folder_path(files: Vec<String>, folders: Vec<String>) -> (Vec<PathBuf>, Vec<PathBuf>) {

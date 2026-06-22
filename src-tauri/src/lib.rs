@@ -16,12 +16,15 @@ use folder::clear::clear_tmp_folder;
 use folder::tree::get_workspace_tree;
 use folder::create_project::create_project;
 
+mod error;
+
 use tauri_plugin_dialog;
 
 
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    clear_tmp_folder().ok(); // Delete tmp folder on lunch
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())

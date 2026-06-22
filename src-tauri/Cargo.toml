@@ -26,4 +26,5 @@ tauri-plugin-fs = "2"
 zip = "8.6.0"
 walkdir = "2.5.0"
 tauri-plugin-dialog = "2.7.1"
+thiserror = "2.0.18"
 

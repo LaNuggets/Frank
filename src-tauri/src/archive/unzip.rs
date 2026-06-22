@@ -24,13 +24,6 @@ pub fn unzip(zip_path: String) -> zip::result::ZipResult<String> {
         std::fs::create_dir_all(&extraction_dir)?;
     }
 
-    // TODO add a check to be sure that the .codeprez as the good format :
-    //   ├── assets/
-    //   ├── env/
-    //   ├── config.json
-    //   ├── presentation.md
-    //   └── style.css
-
     for i in 0..archive.len() {
         let mut entry = archive.by_index(i)?;
         let out_path = extraction_dir.join(entry.name());

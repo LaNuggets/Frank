@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
@@ -21,12 +21,11 @@ import ReadFileLines from "./components/ReadFileLines.vue";
 // this will take the tmp folder content and zip it to the given path.
 
 const workspace = ref<string | null>(null);
-function onWorkspaceReady(path: string) {
-    workspace.value = path;
-}
 
 
-// This part is for clearing the tmp file on the app closing
+// This part is for clearing the tmp file when the close button is pressed.
+// But we can not be sure that the app will close on this way.
+// So on the rust side, the same function is call on app lunch.
 const folder = ref();
 onMounted(async () => {
     await getCurrentWindow().onCloseRequested(async () => {

@@ -17,6 +17,7 @@ async function loadTree() {
 
     try {
         // This command return the tmp workspace tree
+        // So its only works after the tmp folder init ().
         // The return value is a Json with the FileNode type
         tree.value = await invoke<FileNode>("get_workspace_tree");
     } catch (e) {

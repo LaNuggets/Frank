@@ -1,47 +1,11 @@
+use std::ffi::OsStr;
 use std::fs::read_to_string;
-use std::fmt;
-use std::io;
 use std::path::PathBuf;
-use tauri::ipc::InvokeError;
 use std::{fs, path::Path};
 
+
 use crate::helper::get_tmp_folder_path;
-
-#[derive(Debug)]
-pub enum AppError {
-    WrongLinesFormat,
-    IoError(String),
-    ParseError(String),
-}
-
-impl fmt::Display for AppError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            AppError::WrongLinesFormat => write!(f, "Wrong lines format"),
-            AppError::IoError(_e) => write!(f, "No file found"),
-            AppError::ParseError(e) => write!(f, "Parse error: {}", e),
-        }
-    }
-}
-
-impl From<AppError> for InvokeError {
-    fn from(e: AppError) -> Self {
-        InvokeError::from(e.to_string())
-    }
-}
-
-impl From<std::num::ParseIntError> for AppError {
-    fn from(e: std::num::ParseIntError) -> Self {
-        AppError::ParseError(e.to_string())
-    }
-}
-
-impl From<io::Error> for AppError {
-    fn from(e: io::Error) -> Self {
-        AppError::IoError(e.to_string())
-    }
-}
-
+use crate::error::AppError;
 
 #[tauri::command]
 pub fn read_file(path: String) -> Result<String, String> {
@@ -50,23 +14,26 @@ pub fn read_file(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub fn read_file_lines_command(filename: &str, lines: &str) -> Result<Vec<String>, AppError> {
+pub fn read_file_lines_command(filename: &str, lines: &str) -> Result<(Vec<String>, Option<&str>), AppError> {
     read_lines(filename, lines)
 }
+
 
 /// Read file content.
 /// 
 /// * `filename` - A string containing only the file name (e.g : "main.rs")
 /// * `lines` - A string containing the line to get (e.g : "5-20" to get lines 5 to 20)
 /// * `return` - A vector with all the lines.
-fn read_lines(filename: &str, lines: &str) -> Result<Vec<String>, AppError> {
+fn read_lines(filename: &str, lines: &str) -> Result<(Vec<String>, Option<&str>), AppError> {
     let mut result: Vec<String> = Vec::new();
     let all_lines: Vec<i32> = get_lines(lines)?;
     let tmp_folder: PathBuf = get_tmp_folder_path();
+    let file_path = tmp_folder.join(filename);
+    let extention = file_path.extension().and_then(OsStr::to_str);
 
     let mut i : i32 = 0;
 
-    for line in read_to_string(tmp_folder.join(filename))?.lines() {
+    for line in read_to_string(file_path)?.lines() {
         i += 1;
         if i > all_lines[all_lines.len()-1] {
             break;
@@ -76,7 +43,7 @@ fn read_lines(filename: &str, lines: &str) -> Result<Vec<String>, AppError> {
             result.push(line.to_string());
         }
     }
-    Ok(result)
+    Ok((result, extention))
 }
 
 

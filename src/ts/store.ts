@@ -2,7 +2,9 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useStore = defineStore('global', () => {
+    // workspacePath contain the path to the tmp floder.
     const workspacePath = ref<string | null>(localStorage.getItem('workspace'))
+    // savePath contain the path of where is save the project on save.
     const savePath = ref<string | null>(localStorage.getItem('save'))
 
     const setWorkspacePath = (newWorkspacePath: string) => {
