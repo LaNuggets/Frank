@@ -8,7 +8,7 @@ const content = ref("");
 
 const getContent = async () => {
     const workspace = store.workspacePath;
-    const file = 'aze.json';
+    const file = 'config.json';
 
     try {
         // This command gonna read the given file content

@@ -1,6 +1,5 @@
 use std::{fs::File, path::Path, io::{self, Read, Write}};
 use std::path::PathBuf;
-use std::fmt;
 use zip::{ZipWriter, CompressionMethod, write::{ExtendedFileOptions, FileOptions}};
 
 use crate::helper::get_tmp_folder_path;
@@ -50,8 +49,8 @@ fn ensure_codeprez_extension(mut path: PathBuf) -> PathBuf {
 fn check_main_file_validity(files: &Vec<String>) -> bool {
     for file in files {
         if file != "style.css"
-        || file != "presentation.md"
-        || file != "config.json"
+        && file != "presentation.md"
+        && file != "config.json"
         {
             return false;
         }

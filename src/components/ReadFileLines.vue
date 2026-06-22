@@ -10,7 +10,7 @@ const extention = ref();
 
 const readLines = async () => {
     // Replace this with actual value
-    const filename = "./assets/code.js";
+    const filename = "./assets/index.js";
     const lines = "1-5";
 
     try {

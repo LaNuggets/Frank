@@ -1,5 +1,6 @@
 use thiserror::Error;
 use std::num::ParseIntError;
+use tauri::ipc::InvokeError;
 
 #[derive(Debug, Error)]
 pub enum AppError {
@@ -18,4 +19,10 @@ pub enum AppError {
 
     #[error("Missing main files; at least one of the 3 main files is not present. Be sure that you have: style.css, presentation.md, and config.json")]
     MissingMainFiles,
+}
+
+impl From<AppError> for InvokeError {
+    fn from(e: AppError) -> Self {
+        InvokeError::from(e.to_string())
+    }
 }

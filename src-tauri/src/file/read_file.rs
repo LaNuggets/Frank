@@ -14,7 +14,7 @@ pub fn read_file(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub fn read_file_lines_command(filename: &str, lines: &str) -> Result<(Vec<String>, Option<&str>), AppError> {
+pub fn read_file_lines_command(filename: &str, lines: &str) -> Result<(Vec<String>, Option<String>), AppError> {
     read_lines(filename, lines)
 }
 
@@ -24,12 +24,12 @@ pub fn read_file_lines_command(filename: &str, lines: &str) -> Result<(Vec<Strin
 /// * `filename` - A string containing only the file name (e.g : "main.rs")
 /// * `lines` - A string containing the line to get (e.g : "5-20" to get lines 5 to 20)
 /// * `return` - A vector with all the lines.
-fn read_lines(filename: &str, lines: &str) -> Result<(Vec<String>, Option<&str>), AppError> {
+fn read_lines(filename: &str, lines: &str) -> Result<(Vec<String>, Option<String>), AppError> {
     let mut result: Vec<String> = Vec::new();
     let all_lines: Vec<i32> = get_lines(lines)?;
     let tmp_folder: PathBuf = get_tmp_folder_path();
     let file_path = tmp_folder.join(filename);
-    let extention = file_path.extension().and_then(OsStr::to_str);
+    let extention = file_path.extension().and_then(OsStr::to_str).map(|s| s.to_string());
 
     let mut i : i32 = 0;
 
