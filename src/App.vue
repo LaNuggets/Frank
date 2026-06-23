@@ -3,27 +3,27 @@ import { Menu, Submenu, MenuItem  } from '@tauri-apps/api/menu';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { ref } from 'vue';
 import { openProject, saveProject, saveProjectAs , createProject,clearTmpFolder} from './ts/action_file.ts';
-import { newSlide, removeSlide, presentation_mode } from './ts/action_project.ts';
+import { presentation_mode } from './ts/action_project.ts';
+import Editor from './components/editor.vue';
+import Author from './components/author.vue';
+import Css from './components/css.vue';
+import Project from './components/project.vue';
+import {useStore} from './ts/store.ts';
 
 const appWindow = getCurrentWindow();
-const editorOpen = ref(false);
-const authorOpen = ref(false);
-const cssOpen = ref(false);
+const activePanel = ref<"editor" | "author" | "css" | null>(null);
+
 function toggleEditor() {
-  editorOpen.value = !editorOpen.value;
+  activePanel.value = activePanel.value === "editor" ? null : "editor";
 }
 
 function toggleAuthor() {
-  authorOpen.value = !authorOpen.value;
+  activePanel.value = activePanel.value === "author" ? null : "author";
 }
 
 function toggleCss() {
-  cssOpen.value = !cssOpen.value;
+  activePanel.value = activePanel.value === "css" ? null : "css";
 }
-
-const startDrag = (e: MouseEvent) => {
-  if (e.buttons === 1) appWindow.startDragging();
-};
 
 const CreateMenu = async () => {
   const FileMenu = await Submenu.new({
@@ -33,6 +33,7 @@ const CreateMenu = async () => {
         id: 'quit',
         text: 'Fermer',
         action: () => {
+          useStore().workspacePath = "";
           clearTmpFolder();
           appWindow.close();
         },
@@ -73,6 +74,7 @@ const CreateMenu = async () => {
         id: 'presentation',
         text: 'Présentation',
         action: () => {
+          activePanel.value = null;
           presentation_mode();
         },
         accelerator: 'Alt+P',
@@ -99,19 +101,7 @@ const CreateMenu = async () => {
         text: 'Afficher/Masquer les css',
         action: toggleCss,
         accelerator: 'Alt+C',
-      }),
-      await MenuItem.new({
-        id: 'newSlide',
-        text: 'ajouter une feuille',
-        action: newSlide,
-        accelerator: 'Shift+Enter',
-      }),
-      await MenuItem.new({
-        id: 'removeSlide',
-        text: 'supprimer la feuille',
-        action: removeSlide,
-        accelerator: 'Shift+Backspace',
-      }),
+      })
     ],
   });
   const menu = await Menu.new({
@@ -126,7 +116,58 @@ CreateMenu();
 </script>
 
 <template>
+  <div class="app-layout">
+
+    <main class="main">
+      <Project />
+    </main>
+
+    <aside v-if="activePanel" class="side-panel">
+      <Editor v-if="activePanel === 'editor'" />
+      <Author v-if="activePanel === 'author'" />
+      <Css v-if="activePanel === 'css'" />
+    </aside>
+
+  </div>
 </template>
 
 <style scoped>
+.app-layout {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 🧱 ZONE PROJECT */
+.main {
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 100%;
+
+  overflow-y: auto;
+
+  overscroll-behavior: contain;
+}
+
+.side-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+
+  width: 50%;
+  height: 100%;
+  overflow-y: auto;
+
+  backdrop-filter: blur(4px);
+  border-left: 1px solid #444;
+
+  display: flex;
+  flex-direction: column;
+
+  overscroll-behavior: contain;
+}
 </style>

@@ -33,6 +33,9 @@ const openProject = async () => {
 
     store.setWorkspacePath(workspace);
 
+    store.setPresentationPath(`${workspace}/presentation.md`);
+    store.setConfigPath(`${workspace}/config.json`);
+    store.setStylePath(`${workspace}/style.css`);
     return workspace;
 }
 
@@ -108,6 +111,7 @@ const loadTree = async () => {
 const clearTmpFolder = async () => {
     return await invoke("clear_tmp_folder");
 }
+
 
 export {
     createProject,
