@@ -16,7 +16,7 @@ const getContent = async () => {
         // The function will return the entire file content in a string.
         // Return a error msg if failed.
         content.value = await invoke<string>("read_file", {
-            path: `${workspace}/${file}`,
+            fileName: file,
         });
     } catch (e: any) {
         // TODO handle error

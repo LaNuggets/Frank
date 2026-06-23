@@ -1,13 +1,14 @@
 use std::env;
 use std::path::PathBuf;
 
+use crate::error::AppError;
+
 
 #[tauri::command]
-pub fn get_base_path() -> String {
-        std::env::current_dir()
-        .unwrap()
+pub fn get_base_path() -> Result<String, AppError> {
+        Ok(std::env::current_dir()?
         .to_string_lossy()
-        .to_string()
+        .to_string())
 }
 
 

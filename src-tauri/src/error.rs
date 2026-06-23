@@ -11,6 +11,12 @@ pub enum AppError {
     #[error("Zip error: {0}")]
     Zip(#[from] zip::result::ZipError),
 
+    #[error("Invalid file name: {0}")]
+    InvalidFileName(String),
+
+    #[error("Strip prefix error: {0}")]
+    StripPrefix(#[from] std::path::StripPrefixError),
+
     #[error("Parse error: {0}")]
     Parse(#[from] ParseIntError),
 

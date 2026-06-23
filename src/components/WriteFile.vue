@@ -19,7 +19,7 @@ const changeContent = async () => {
         // you need to put in the content arg '{"duration": 20, "slides": 48}'
         // This return void when everythings work, otherwise, return error string.
         result.value = await invoke<string>("write_file", {
-            path: `${workspace}/${file}`,
+            fileName: file,
             content: content.value,
         });
     } catch (e) {
