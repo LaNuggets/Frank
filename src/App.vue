@@ -107,6 +107,63 @@ CreateMenu();
 </script>
 
 <template>
+import { ref, onMounted, onUnmounted } from "vue";
+import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from '@tauri-apps/api/window';
+
+import SaveAs from "./components/SaveAs.vue";
+import Save from "./components/Save.vue";
+
+import OpenProject from "./components/OpenProject.vue";
+import ReadFile from "./components/ReadFile.vue";
+import Writefile from "./components/WriteFile.vue";
+import Tree from "./components/Tree.vue";
+import CreateProject from "./components/CreateProject.vue";
+import ReadFileLines from "./components/ReadFileLines.vue";
+
+
+// Quick reminder off how the app save is content.
+// The logic is has follow; the user open a project, that's will create a tmp folder.
+// This tmp folder is the active workspace. That's where evreything is modified at first.
+// Then when the user gonna save is project with the 'zip_command',
+// this will take the tmp folder content and zip it to the given path.
+
+const workspace = ref<string | null>(null);
+
+
+// This part is for clearing the tmp file when the close button is pressed.
+// But we can not be sure that the app will close on this way.
+// So on the rust side, the same function is call on app lunch.
+const folder = ref();
+onMounted(async () => {
+    await getCurrentWindow().onCloseRequested(async () => {
+        try {
+            folder.value = await invoke<string[]>("clear_tmp_folder");
+        } catch (e) {
+            folder.value = e;
+        }
+    });
+});
+
+
+</script>
+
+<template>
+  <main class="container">
+    <h1>Welcome to Frank</h1>
+    <CreateProject />
+
+    <SaveAs />
+    <Save />
+
+    <OpenProject />
+
+    <ReadFile />
+    <ReadFileLines />
+    <Writefile />
+
+    <Tree />
+  </main>
 </template>
 
 <style scoped>
