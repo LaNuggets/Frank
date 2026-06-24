@@ -13,8 +13,8 @@ const createProject = async () => {
 }
 
 const openProject = async () => {
+    clearTmpFolder();
     const store = useStore();
-    store.presentationVersion++
     const file = await open({
         multiple: false,
         filters: [
@@ -32,10 +32,10 @@ const openProject = async () => {
     });
 
     store.setWorkspacePath(workspace);
-
-    store.setPresentationPath(`${workspace}/presentation.md`);
-    store.setConfigPath(`${workspace}/config.json`);
-    store.setStylePath(`${workspace}/style.css`);
+    store.setPresentationPath("")
+    store.setPresentationPath(`presentation.md`);
+    store.setConfigPath(`config.json`);
+    store.setStylePath(`style.css`);
     return workspace;
 }
 

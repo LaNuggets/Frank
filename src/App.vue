@@ -129,7 +129,9 @@ const CreateMenu = async () => {
         id: 'open',
         text: 'Ouvrir',
         action: () => {
+          activePanel.value = null;
           openProject();
+          store.presentationVersion=0
         },
         accelerator: 'CmdOrCtrl+O',
       }),
