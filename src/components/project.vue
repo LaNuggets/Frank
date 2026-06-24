@@ -1,9 +1,8 @@
-
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
 import { useStore } from "../ts/store";
 import { readFile, readFileLines, buildFsPath } from "../ts/action_file";
-import { getPrismLangForExtension } from "../ts/action_project";
+import { getPrismLangForExtension ,loadConfigSlide} from "../ts/action_project";
 
 import MarkdownIt from "markdown-it";
 import Prism from "prismjs";
@@ -40,6 +39,8 @@ const readFileLinesTyped = async (
 ): Promise<[string[], string | null]> => {
   return await readFileLines(filename, lines);
 };
+
+
 
 md.renderer.rules.image = (tokens, idx) => {
   const token = tokens[idx];
@@ -105,7 +106,28 @@ const pages = computed(() => {
 const renderedPages = computed(() => {
   return store.renderedSlides as string[];
 });
+const applyStyle = async () => {
+    try {
+        const css = await readFile("style.css");
 
+        // I face an issue with background not applying to the slide
+        // This wierd pattern is for that 🤡
+        const bgMatch = css.match(/section\s*\{[^}]*background-color\s*:\s*([^;]+);/);
+        const bg = bgMatch ? bgMatch[1].trim() : "";
+
+        const existingStyle = document.getElementById("presentation-style");
+        if (existingStyle) existingStyle.remove();
+
+        const styleEl = document.createElement("style");
+        styleEl.id = "presentation-style";
+
+        // Same goes here background issue
+        styleEl.textContent = css + (bg ? `\n.slide { background-color: ${bg}; }` : "");
+        document.head.appendChild(styleEl);
+    } catch (e) {
+        console.log("erreur" + e);
+    }
+};
 watch(
   () => [store.presentationPath, store.presentationVersion],
   async () => {
@@ -118,14 +140,18 @@ watch(
     }
 
     content.value = await readFile(path);
-
+    await applyStyle();
+    const configSlide = await loadConfigSlide();
     const slides = pages.value;
-
     const processed = await Promise.all(
-      slides.map(async (s) => preprocessCode(s))
+      slides.map((s) => preprocessCode(s))
     );
+    const finalSlides = processed.map((s) => md.render(s));
 
-    store.renderedSlides = processed.map(s => md.render(s));
+    store.renderedSlides = [
+      configSlide,
+      ...finalSlides
+    ];
   },
   { immediate: true }
 );
@@ -180,4 +206,5 @@ watch(
         padding: 2px 8px;
         border-radius: 4px;
     }
+    
 </style>

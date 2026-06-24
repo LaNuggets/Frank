@@ -1,5 +1,7 @@
 import config from "../assets/markdown.config.json";
 import { invoke } from "@tauri-apps/api/core";
+import { useStore } from "./store";
+import { readFile } from "./action_file";
 
 const rules = config as unknown as Record<string, string>;
 
@@ -181,9 +183,74 @@ const preprocessMarkdown= async (content: string): Promise<string> => {
   return result;
 }
 
+const generateCoverSlide = (config: {
+  title?: string;
+  authors?: string[];
+}): string => {
+  const title = config.title || "Untitled";
+  const authors = (config.authors || []).join(", ");
+
+  return `
+<section class="cover-slide" style="
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0 10%;
+">
+
+  <div style="
+    width: 100%;
+    max-width: 900px;
+  ">
+
+    <h1 style="
+      font-size: 3rem;
+      margin: 0;
+      width: 100%;
+      text-align: left;
+    ">
+      ${title}
+    </h1>
+
+    <p style="
+      margin-top: 20px;
+      font-size: 1.2rem;
+      opacity: 0.7;
+      width: 100%;
+      text-align: left;
+    ">
+      ${authors}
+    </p>
+
+  </div>
+
+</section>
+`;
+};
+
+const loadConfigSlide = async (): Promise<string> => {
+  const store = useStore()
+  try {
+    if (!store.configPath) return "";
+
+    const raw = await readFile(store.configPath);
+    const config = JSON.parse(raw);
+
+    return generateCoverSlide(config);
+  } catch (e) {
+    console.log("config error:", e);
+    return "";
+  }
+};
+
 export {
     convertCustomToHTML,
     convertHTMLToCustom,
     preprocessMarkdown,
-    getPrismLangForExtension
+    getPrismLangForExtension,
+    generateCoverSlide,
+    loadConfigSlide
 }
