@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { useStore } from "./store";
-import {convertCustomToHTML} from './action_project'
+import {convertCustomToHTML,preprocessMarkdown} from './action_project'
 const createProject = async () => {
     const store = useStore();
 
@@ -42,8 +42,9 @@ const openProject = async () => {
 const saveProject = async () => {
     const store = useStore();
     if (store.presentationPath!==null) {
-        const text = await readFile(store.presentationPath)
-        const html = convertCustomToHTML(text);
+        const text = await readFile(store.presentationPath);
+        const processed = await preprocessMarkdown(text);
+        const html = convertCustomToHTML(processed);
         writeFile(store.presentationPath,html)
     }
     store.presentationVersion++
@@ -62,8 +63,9 @@ const saveProject = async () => {
 const saveProjectAs = async () => {
     const store = useStore();
     if (store.presentationPath!==null) {
-        const text = await readFile(store.presentationPath)
-        const html = convertCustomToHTML(text);
+        const text = await readFile(store.presentationPath);
+        const processed = await preprocessMarkdown(text);
+        const html = convertCustomToHTML(processed);
         writeFile(store.presentationPath,html)
     }
     const zipPath = await save({
@@ -106,12 +108,13 @@ const writeFile = async (fileName: string, content: string) => {
     });
 }
 
-const readFileLines = async (fileName: string,lines: string) => {
-    return await invoke("read_file_lines_command", {
+const readFileLines = async (fileName: string,lines: string): Promise<[string[], string | null]> => {
+    return await invoke<[string[], string | null]>("read_file_lines_command", {
         fileName,
         lines,
     });
 }
+
 
 const loadTree = async () => {
     return await invoke("get_workspace_tree");
