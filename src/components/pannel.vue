@@ -32,11 +32,11 @@ const updateFile = async () => {
 </script>
 
 <template>
-  <textarea v-model="text" @input="updateFile" class="editor" />
+  <textarea v-model="text" @input="updateFile" class="pannel" />
 </template>
 
 <style scoped>
-.editor {
+.pannel {
   width: 100%;
   height: 100%;
   padding: 1rem;
@@ -44,8 +44,14 @@ const updateFile = async () => {
   font-size: 14px;
   border: none;
   outline: none;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.8);
   resize: none;
   overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.pannel::-webkit-scrollbar {
+  display: none;
 }
 </style>

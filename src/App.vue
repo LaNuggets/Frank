@@ -3,14 +3,15 @@ import { Menu, Submenu, MenuItem  } from '@tauri-apps/api/menu';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { onMounted, ref , onUnmounted} from 'vue';
 import { openProject, saveProject, saveProjectAs , createProject,clearTmpFolder} from './ts/action_file.ts';
-import { presentation_mode } from './ts/action_project.ts';
+import Presentation from './components/presentation.vue';
 import Pannel from './components/pannel.vue';
 import Project from './components/project.vue';
 import {useStore} from './ts/store.ts';
 
 const appWindow = getCurrentWindow();
-const activePanel = ref<"editor" | "author" | "css" | null>(null);
-
+const activePanel = ref<"editor" | "author" | "css" | "presentation" | null>(null);
+const store = useStore();
+const isPresentation = ref<boolean>(false)
 function toggleEditor() {
   activePanel.value = activePanel.value === "editor" ? null : "editor";
 }
@@ -23,44 +24,86 @@ function toggleCss() {
   activePanel.value = activePanel.value === "css" ? null : "css";
 }
 
+async function togglePresentation() {
+  activePanel.value = isPresentation.value ? null : "presentation";
+  isPresentation.value = activePanel.value === "presentation";
+  if (isPresentation.value) store.currentSlide = 0 ;
+  await appWindow.setFullscreen(isPresentation.value)
+  await appWindow.setDecorations(!isPresentation.value)
+}
+
 function handleShortcuts(e:KeyboardEvent){
-  //fichier part
-  if ((e.ctrlKey ||e.metaKey) && e.key.toLowerCase()==="n"){
-    e.preventDefault();
-    createProject();
-  }
-  if ((e.ctrlKey ||e.metaKey) && e.key.toLowerCase()==="o"){
-    e.preventDefault();
-    openProject();
-  }
-  if ((e.ctrlKey ||e.metaKey) && e.key.toLowerCase()==="s"){
-    e.preventDefault();
-    saveProject();
-  }
-  if ((e.ctrlKey ||e.metaKey) && e.shiftKey && e.key.toLowerCase()==="s"){
-    e.preventDefault();
-    saveProjectAs();
+  if (activePanel.value !== "presentation") {
+    //fichier part
+    if ((e.ctrlKey ||e.metaKey) && e.key.toLowerCase()==="n"){
+      e.preventDefault();
+      createProject();
+    }
+    if ((e.ctrlKey ||e.metaKey) && e.key.toLowerCase()==="o"){
+      e.preventDefault();
+      openProject();
+    }
+    if ((e.ctrlKey ||e.metaKey) && e.key.toLowerCase()==="s"){
+      e.preventDefault();
+      saveProject();
+    }
+    if ((e.ctrlKey ||e.metaKey) && e.shiftKey && e.key.toLowerCase()==="s"){
+      e.preventDefault();
+      saveProjectAs();
+    }
+    //edition part
+    if (e.altKey && e.key.toLowerCase()==="m"){
+      e.preventDefault();
+      toggleEditor();
+    }
+    if (e.altKey && e.key.toLowerCase()==="a"){
+      e.preventDefault();
+      toggleAuthor();
+    }
+    if (e.altKey && e.key.toLowerCase()==="c"){
+      e.preventDefault();
+      toggleCss();
+    }
+  }else{
+    handlePresentationKeys(e);
+    return;
   }
   if (e.altKey && e.key.toLowerCase()==="p"){
     e.preventDefault();
-    activePanel.value = null;
-    presentation_mode();
-  }
-  //edition part
-  if (e.altKey && e.key.toLowerCase()==="m"){
-    e.preventDefault();
-    toggleEditor();
-  }
-  if (e.altKey && e.key.toLowerCase()==="a"){
-    e.preventDefault();
-    toggleAuthor();
-  }
-  if (e.altKey && e.key.toLowerCase()==="c"){
-    e.preventDefault();
-    toggleCss();
+    togglePresentation();
   }
 }
+function handlePresentationKeys(e: KeyboardEvent) {
+  if (activePanel.value !== "presentation") return;
 
+  if (e.key === "ArrowRight" || e.key === "ArrowDown" ) {
+    if (store.currentSlide < store.renderedSlides.length - 1) {
+      store.currentSlide++;
+    }
+  }
+
+  if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+    store.currentSlide = Math.max(0, store.currentSlide - 1);
+  }
+
+  if (e.altKey && e.key.toLowerCase() === "p") {
+    togglePresentation();
+  }
+}
+function handlePresentationClick(e: MouseEvent) {
+  if (activePanel.value !== "presentation") return;
+  if (e.button !== 0) return;
+  const middle = window.innerWidth / 2;
+
+  // moitié gauche
+  if (e.clientX < middle) {
+    store.currentSlide = Math.max(0, store.currentSlide - 1);
+    return;
+  }
+  if (store.currentSlide < store.renderedSlides.length - 1) {
+    store.currentSlide++;
+  }
+}
 const CreateMenu = async () => {
   const FileMenu = await Submenu.new({
     text: 'Fichier',
@@ -69,7 +112,7 @@ const CreateMenu = async () => {
         id: 'quit',
         text: 'Fermer',
         action: () => {
-          useStore().workspacePath = "";
+          store.workspacePath = "";
           clearTmpFolder();
           appWindow.close();
         },
@@ -110,8 +153,7 @@ const CreateMenu = async () => {
         id: 'presentation',
         text: 'Présentation',
         action: () => {
-          activePanel.value = null;
-          presentation_mode();
+          togglePresentation();
         },
         accelerator: 'Alt+P',
       }),
@@ -143,27 +185,29 @@ const CreateMenu = async () => {
   const menu = await Menu.new({
     items: [FileMenu, editmenu],
   });
-
   await menu.setAsAppMenu();
 }
 
 CreateMenu();
 onMounted(() => {
   window.addEventListener('keydown', handleShortcuts);
+  window.addEventListener("click", handlePresentationClick);
 });
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleShortcuts);
+  window.removeEventListener("click", handlePresentationClick);
 });
 </script>
 
-<template>
+<template class="no-scrollbar">
   <div class="app-layout">
     <main class="main">
-      <Project />
+      <Project v-if="!isPresentation" />
+      <Presentation v-else />
     </main>
 
-    <aside v-if="activePanel" class="side-panel">
+    <aside v-if="activePanel && activePanel !== 'presentation'"" class="side-panel">
       <Pannel v-if="activePanel === 'editor'" :path="useStore().presentationPath" mode="custom" />
       <Pannel v-if="activePanel === 'author'" :path="useStore().configPath" mode="raw" />
       <Pannel v-if="activePanel === 'css'" :path="useStore().stylePath" mode="raw"/>
@@ -208,5 +252,30 @@ onUnmounted(() => {
   flex-direction: column;
 
   overscroll-behavior: contain;
+}
+
+.no-scrollbar,
+.main,
+.side-panel,
+.presentation {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar,
+.main::-webkit-scrollbar,
+.side-panel::-webkit-scrollbar,
+.presentation::-webkit-scrollbar {
+  display: none;
+}
+
+body.no-scrollbar {
+  overflow: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+body.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 </style>

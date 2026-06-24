@@ -121,6 +121,15 @@ const clearTmpFolder = async () => {
     return await invoke("clear_tmp_folder");
 }
 
+function buildFsPath(base: string, src: string) {
+  const baseDir = base.replace(/\\/g, "/");
+
+  const projectRoot = baseDir;
+
+  const cleanSrc = src.replace(/^(\.\/|\/)/, "");
+
+  return `${projectRoot}/${cleanSrc}`;
+}
 
 export {
     createProject,
@@ -131,5 +140,6 @@ export {
     writeFile,
     readFileLines,
     loadTree,
-    clearTmpFolder
+    clearTmpFolder,
+    buildFsPath
 }

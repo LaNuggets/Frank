@@ -1,4 +1,4 @@
-use std::{fs::File, path::Path, io::{self, Read, Write}};
+use std::{fs::{File, remove_dir}, io::{self, Read, Write}, path::Path};
 use std::path::PathBuf;
 use zip::{ZipWriter, CompressionMethod, write::{ExtendedFileOptions, FileOptions}};
 
@@ -22,15 +22,18 @@ pub fn zip_command(zip_path: String, files_name: Vec<String>) -> Result<(), Stri
 }
 
 
-// pub fn zip(zip_path: String, files_and_folders_name: Vec<String>) -> zip::result::ZipResult<()>{
 pub fn zip(zip_path: String, files_and_folders_name: Vec<String>) -> Result<(), AppError>{
     let zip_path = ensure_codeprez_extension(PathBuf::from(zip_path));
-    let (mut archive, options) = create_archive(zip_path)?;
+    let (mut archive, options) = create_archive(&zip_path)?;
 
     let (files, folders) = split_files_and_folders(files_and_folders_name);
     if !check_main_file_validity(&files) {
+        // Remove archive if failed; otherwise this will create a corrupt file
+        drop(archive);
+        std::fs::remove_file(zip_path)?;
         return Err(AppError::MissingMainFiles);
     }
+
     let (files_path, folders_path) = complete_file_and_folder_path(files, folders);
 
     zip_files(&mut archive, &options, files_path)?;
@@ -77,7 +80,7 @@ fn complete_file_and_folder_path(files: Vec<String>, folders: Vec<String>) -> (V
 
 /// Create an archive with its compression option
 /// * `zip_path` - The path of where to create this archive
-pub fn create_archive(zip_path: PathBuf) -> Result<(ZipWriter<File>, FileOptions<'static, ExtendedFileOptions>), io::Error> {
+pub fn create_archive(zip_path: &PathBuf) -> Result<(ZipWriter<File>, FileOptions<'static, ExtendedFileOptions>), AppError> {
     let zip_file = File::create(zip_path)?;
     let zip = ZipWriter::new(zip_file);
     let options = FileOptions::default().compression_method(CompressionMethod::DEFLATE);
@@ -109,12 +112,16 @@ pub fn split_files_and_folders(files_and_folders_name:  Vec<String>) -> (Vec<Str
 pub fn zip_files(
     archive: &mut ZipWriter<File>,
     options: &FileOptions<'_, ExtendedFileOptions>,
-    files_path: Vec<PathBuf>) -> zip::result::ZipResult<()>
+    files_path: Vec<PathBuf>) -> Result<(), AppError>
     {
 
     for file_path in &files_path {
         let file = File::open(file_path)?;
-        let file_name = file_path.file_name().unwrap().to_str().unwrap();
+        let file_name = file_path
+            .file_name()
+            .ok_or(zip::result::ZipError::InvalidArchive("Invalid file name".into()))?
+            .to_str()
+            .ok_or(zip::result::ZipError::InvalidArchive("Invalid UTF-8 file name".into()))?;
         archive.start_file(file_name, options.clone())?;
 
         let mut buffer = Vec::new();
@@ -135,9 +142,13 @@ pub fn zip_folders(
     archive: &mut ZipWriter<File>,
     options: &FileOptions<'static, ExtendedFileOptions>,
     folders_path: Vec<PathBuf>,
-) -> zip::result::ZipResult<()> {
+) -> Result<(), AppError> {
     for folder_path in folders_path.iter() {
-        let folder_name = folder_path.file_name().unwrap().to_str().unwrap();
+        let folder_name = folder_path
+            .file_name()
+            .ok_or(zip::result::ZipError::InvalidArchive("Invalid folder name".into()))?
+            .to_str()
+            .ok_or(zip::result::ZipError::InvalidArchive("Invalid UTF-8 folder name".into()))?;
 
         // Walk recursively through all entries in the folder
         for entry in walkdir::WalkDir::new(folder_path) {
@@ -148,7 +159,7 @@ pub fn zip_folders(
             let zip_path = format!(
                 "{}/{}",
                 folder_name,
-                path.strip_prefix(folder_path).unwrap().display()
+                path.strip_prefix(folder_path)?.display()
             );
 
             if path.is_dir() {

@@ -3,6 +3,7 @@ mod file;
 use file::read_file::read_file_lines_command;
 use file::read_file::read_file;
 use file::write_file::write_file;
+use file::copy_file::copy_file;
 
 mod archive;
 use archive::zip::zip_command;
@@ -29,7 +30,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![read_file_lines_command, read_file, write_file, zip_command, unzip_command, get_base_path, clear_tmp_folder, get_workspace_tree, create_project])
+        .invoke_handler(tauri::generate_handler![read_file_lines_command, read_file, write_file, zip_command, unzip_command, get_base_path, clear_tmp_folder, get_workspace_tree, create_project, copy_file])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

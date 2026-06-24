@@ -1,7 +1,7 @@
 use std::{fs::{self, File}, path::Path, io};
 use zip::ZipArchive;
 
-use crate::helper::get_tmp_folder_path;
+use crate::{error::AppError, helper::get_tmp_folder_path};
 
 
 #[tauri::command]
@@ -11,7 +11,8 @@ pub fn unzip_command(zip_path: String) -> Result<String, String> {
 
 /// Create a folder that contain everythings that was in the given zip.
 /// * `zip_path` - The path to the zip.
-pub fn unzip(zip_path: String) -> zip::result::ZipResult<String> {
+/// * `return` - The path of where the archive has been unzip.
+pub fn unzip(zip_path: String) -> Result<String, AppError> {
     let zip_file_path = Path::new(&zip_path);
     let zip_file = File::open(zip_file_path)?;
 

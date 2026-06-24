@@ -8,7 +8,9 @@ use crate::helper::get_tmp_folder_path;
 use crate::error::AppError;
 
 #[tauri::command]
-pub fn read_file(path: String) -> Result<String, String> {
+pub fn read_file(file_name: String) -> Result<String, String> {
+    let path = get_tmp_folder_path().join(file_name);
+
     fs::read_to_string(Path::new(&path))
         .map_err(|e| e.to_string())
 }
