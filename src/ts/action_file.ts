@@ -108,13 +108,13 @@ const writeFile = async (fileName: string, content: string) => {
     });
 }
 
-const readFileLines = async (fileName: string,lines: string): Promise<[string[], string | null]> => {
-    return await invoke<[string[], string | null]>("read_file_lines_command", {
-        fileName,
-        lines,
-    });
-}
 
+const readFileLines = async (filename: string,lines: string): Promise<[string[], string | null]> => {
+  return await invoke<[string[], string | null]>("read_file_lines_command", {
+    filename,
+    lines,
+  });
+};
 
 const loadTree = async () => {
     return await invoke("get_workspace_tree");
