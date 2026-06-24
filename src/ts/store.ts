@@ -9,7 +9,10 @@ export const useStore = defineStore('global', () => {
     const presentationPath = ref<string | null>(null)
     const configPath = ref<string | null>(null)
     const stylePath = ref<string | null>(null)
-    const presentationVersion = 0
+    const presentationVersion = ref<number>(0)
+    const renderedSlides = ref<string[]>([])
+    const currentSlide = ref<number>(0)
+
     const setWorkspacePath = (newWorkspacePath: string) => {
         workspacePath.value = newWorkspacePath
         localStorage.setItem('workspace', newWorkspacePath);
@@ -45,6 +48,8 @@ export const useStore = defineStore('global', () => {
         configPath,
         stylePath,
         presentationVersion,
+        currentSlide,
+        renderedSlides,
         setWorkspacePath,
         removeWorkspacePath,
         setSavePath,
