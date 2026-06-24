@@ -1,4 +1,4 @@
-use std::{fs::{File, remove_dir}, io::{self, Read, Write}, path::Path};
+use std::{fs::{File}, io::{self, Read, Write}, path::Path};
 use std::path::PathBuf;
 use zip::{ZipWriter, CompressionMethod, write::{ExtendedFileOptions, FileOptions}};
 

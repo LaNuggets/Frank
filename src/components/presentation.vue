@@ -18,7 +18,10 @@ const currentSlide = computed(() =>
 
 <template>
   <div class="presentation">
-    <div v-if="hasSlide" class="slide" v-html="currentSlide" />
+    <div v-if="hasSlide" class="slide">
+      <div v-html="currentSlide" />
+      <span class="slide-number">{{ current + 1 }} / {{ slides.length }}</span>
+    </div>
   </div>
 </template>
 
@@ -31,9 +34,23 @@ const currentSlide = computed(() =>
 }
 
 .slide {
+  position: relative;
   width: 100%;
   height: 100%;
 }
+
+.slide-number {
+  position: absolute;
+  bottom: 12px;
+  right: 16px;
+  font-size: 0.85rem;
+  opacity: 0.6;
+  color: white;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
 .presentation {
   overflow: auto;
   scrollbar-width: none;

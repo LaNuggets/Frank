@@ -55,30 +55,34 @@ const pages = computed(() => {
     .map(p => p.trim())
     .filter(Boolean);
 });
-    const applyStyle = async () => {
-        try {
-            const css = await readFile("/tmp/codeprez/style.css");
-            console.log(css);
-            
-            const existingStyle = document.getElementById("presentation-style");
-            if (existingStyle) existingStyle.remove();
-            
-            const styleEl = document.createElement("style");
-            styleEl.id = "presentation-style";
-            styleEl.textContent = css;
-            document.head.appendChild(styleEl);
-        } catch  (e){
-            console.log("erreur" + e);
-        }
-    };
-    // const renderedPages = computed(() => {
-    //     return pages.value.map(page => {
-    //         return md.render(page);
-    //     });
-    // });
-    const renderedPages = computed(() =>
-        pages.value.map(page => `<section>${md.render(page)}</section>`)
-    );
+
+const applyStyle = async () => {
+    try {
+        const css = await readFile("style.css");
+
+        // I face an issue with background not applying to the slide
+        // This wierd pattern is for that 🤡
+        const bgMatch = css.match(/section\s*\{[^}]*background-color\s*:\s*([^;]+);/);
+        const bg = bgMatch ? bgMatch[1].trim() : "";
+
+        const existingStyle = document.getElementById("presentation-style");
+        if (existingStyle) existingStyle.remove();
+
+        const styleEl = document.createElement("style");
+        styleEl.id = "presentation-style";
+
+        // Same goes here background issue
+        styleEl.textContent = css + (bg ? `\n.slide { background-color: ${bg}; }` : "");
+        document.head.appendChild(styleEl);
+    } catch (e) {
+        console.log("erreur" + e);
+    }
+};
+const renderedPages = computed(() => {
+    return pages.value.map(page => {
+        return md.render(page);
+    });
+});
 
 watch(
   () => [store.presentationPath, store.presentationVersion],
@@ -108,17 +112,22 @@ watch(
 </script>
 
 <template>
-  <div
-    v-for="(page, index) in renderedPages"
-    :key="index"
-    class="slide"
-    v-html="page"
-  />
+    <div
+        v-for="(page, index) in renderedPages"
+        :key="index"
+        class="slide"
+    >
+    <div v-html="page" />
+    <span class="slide-number">{{ index + 1 }} / {{ renderedPages.length }}</span>
+  </div>
+
 </template>
 
 <style scoped>
     .slide {
+        position: relative;
         width: 90%;
+        height: 90vh;
         min-height: 90vh;
         padding: 20px;
         margin: 1% 3%;
@@ -126,15 +135,28 @@ watch(
         box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         scrollbar-width: none;
         -ms-overflow-style: none;
-        h1{
-            font-size: 2rem;
-        }
-        pre {
-            padding: 1rem;
-            overflow-x: auto;
-        }
     }
+
     .slide::-webkit-scrollbar {
         display: none;
-        }
+    }
+
+    .slide section {
+        flex-direction: column !important;
+        min-height: 100%;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .slide-number {
+        position: absolute;
+        bottom: 12px;
+        right: 16px;
+        font-size: 0.85rem;
+        opacity: 0.6;
+        color: white;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 2px 8px;
+        border-radius: 4px;
+    }
 </style>

@@ -93,22 +93,22 @@ const saveProjectAs = async () => {
     return result;
 }
 
-const readFile = async (path: string) => {
+const readFile = async (fileName: string) => {
     return await invoke<string>("read_file", {
-        path,
+        fileName,
     });
 }
 
-const writeFile = async (path: string, content: string) => {
+const writeFile = async (fileName: string, content: string) => {
     return await invoke("write_file", {
-        path,
+        fileName,
         content,
     });
 }
 
-const readFileLines = async (filename: string,lines: string) => {
+const readFileLines = async (fileName: string,lines: string) => {
     return await invoke("read_file_lines_command", {
-        filename,
+        fileName,
         lines,
     });
 }
