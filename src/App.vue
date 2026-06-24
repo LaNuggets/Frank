@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { Menu, Submenu, MenuItem  } from '@tauri-apps/api/menu';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { ref } from 'vue';
+import { onMounted, ref , onUnmounted} from 'vue';
 import { openProject, saveProject, saveProjectAs , createProject,clearTmpFolder} from './ts/action_file.ts';
 import { presentation_mode } from './ts/action_project.ts';
-import Editor from './components/editor.vue';
-import Author from './components/author.vue';
-import Css from './components/css.vue';
+import Pannel from './components/pannel.vue';
 import Project from './components/project.vue';
 import {useStore} from './ts/store.ts';
 
@@ -23,6 +21,44 @@ function toggleAuthor() {
 
 function toggleCss() {
   activePanel.value = activePanel.value === "css" ? null : "css";
+}
+
+function handleShortcuts(e:KeyboardEvent){
+  //fichier part
+  if ((e.ctrlKey ||e.metaKey) && e.key.toLowerCase()==="n"){
+    e.preventDefault();
+    createProject();
+  }
+  if ((e.ctrlKey ||e.metaKey) && e.key.toLowerCase()==="o"){
+    e.preventDefault();
+    openProject();
+  }
+  if ((e.ctrlKey ||e.metaKey) && e.key.toLowerCase()==="s"){
+    e.preventDefault();
+    saveProject();
+  }
+  if ((e.ctrlKey ||e.metaKey) && e.shiftKey && e.key.toLowerCase()==="s"){
+    e.preventDefault();
+    saveProjectAs();
+  }
+  if (e.altKey && e.key.toLowerCase()==="p"){
+    e.preventDefault();
+    activePanel.value = null;
+    presentation_mode();
+  }
+  //edition part
+  if (e.altKey && e.key.toLowerCase()==="m"){
+    e.preventDefault();
+    toggleEditor();
+  }
+  if (e.altKey && e.key.toLowerCase()==="a"){
+    e.preventDefault();
+    toggleAuthor();
+  }
+  if (e.altKey && e.key.toLowerCase()==="c"){
+    e.preventDefault();
+    toggleCss();
+  }
 }
 
 const CreateMenu = async () => {
@@ -112,22 +148,26 @@ const CreateMenu = async () => {
 }
 
 CreateMenu();
+onMounted(() => {
+  window.addEventListener('keydown', handleShortcuts);
+});
 
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleShortcuts);
+});
 </script>
 
 <template>
   <div class="app-layout">
-
     <main class="main">
       <Project />
     </main>
 
     <aside v-if="activePanel" class="side-panel">
-      <Editor v-if="activePanel === 'editor'" />
-      <Author v-if="activePanel === 'author'" />
-      <Css v-if="activePanel === 'css'" />
+      <Pannel v-if="activePanel === 'editor'" :path="useStore().presentationPath" mode="custom" />
+      <Pannel v-if="activePanel === 'author'" :path="useStore().configPath" mode="raw" />
+      <Pannel v-if="activePanel === 'css'" :path="useStore().stylePath" mode="raw"/>
     </aside>
-
   </div>
 </template>
 
@@ -139,7 +179,6 @@ CreateMenu();
   overflow: hidden;
 }
 
-/* 🧱 ZONE PROJECT */
 .main {
   position: absolute;
   top: 0;

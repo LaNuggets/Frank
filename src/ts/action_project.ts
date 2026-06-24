@@ -27,13 +27,11 @@ function convertCustomToHTML(text: string): string {
     const inside = match[1];
     let style = "";
 
-    const attrs = inside.split(/\s+/);
+    const attrRegex = /(\w+)=["']([^"']+)["']/g;
 
-    for (const attr of attrs) {
-      const m = attr.match(/(\w+)=["']?(.*?)["']?$/);
+    let m: RegExpExecArray | null;
 
-      if (!m) continue;
-
+    while ((m = attrRegex.exec(inside)) !== null) {
       const customKey = m[1];
       const value = m[2];
 
@@ -44,14 +42,14 @@ function convertCustomToHTML(text: string): string {
       }
     }
 
-    result += `<div style="${style.trim()}">`;
-    stack.push("div");
+    result += `<span style="${style.trim()}">`;
+    stack.push("span");
   }
 
   result += text.slice(lastIndex);
 
   while (stack.length) {
-    result += `</div>`;
+    result += `</span>`;
     stack.pop();
   }
 
@@ -63,7 +61,7 @@ function convertHTMLToCustom(html: string): string {
     Object.entries(rules).map(([k, v]) => [v, k])
   );
 
-  const divRegex = /<div\s+style="([^"]*?)">|<\/div>/g;
+  const divRegex = /<span\s+style="([^"]*?)">|<\/span>/g;
   const stack: string[] = [];
 
   let result = "";
@@ -74,7 +72,7 @@ function convertHTMLToCustom(html: string): string {
     result += html.slice(lastIndex, match.index);
     lastIndex = divRegex.lastIndex;
 
-    if (match[0] === "</div>") {
+    if (match[0] === "</span>") {
       const tag = stack.pop();
 
       if (tag) result += "</>";
@@ -98,7 +96,7 @@ function convertHTMLToCustom(html: string): string {
 
     result += `<${attrs.trim()}>`;
 
-    stack.push("div");
+    stack.push("span");
   }
 
   result += html.slice(lastIndex);
