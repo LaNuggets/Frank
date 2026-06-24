@@ -45,18 +45,119 @@ After completing these steps, you can finally start the program by running:
 ```bash
 npm run tauri dev
 ```
+if you want to do a build of the project you just need to do: 
+```bash
+npm run tauri build
+```
 
-# idée
-pré-requis :
-- marquage des pages + id(avec interupteur dans le menu)
-- quand on clique sur un chiffre pour aller directement sur la page (ex : on appuie sur 7 ça va a la slide 7 directement) (ex : alt + chiffre)
+### Key Features & Shortcuts
 
-technique :
-- pouvoir voir la présentation en temps réel quand on modifie le markdown (de la page)
-- zoom static
-- ajout de markdown personaliser (enregistrement en html mais affichage en personalisé)
+### Shortscuts
+To improve workflow and better control the project, the following shortcuts are available:
+- Switch between presentation and preview mode → `Alt + P`
+- Switch to slide editing mode → `Alt + M`
+- Edit author / title → `Alt + A`
+- Edit slide style → `Alt + C`
 
-visuel :
-- avoir un theme par defaut (puis si possible pouvoir changer le thème)
-- pouvoir re-size une image/vidéo/import de fichier en direct
-- transition
+File Management
+- Save → `Ctrl + S` / `Cmd + S`
+- Save as → `Ctrl + Shift + S` / `Cmd + Shift + S`
+- Open project → `Ctrl + O` / `Cmd + O`
+- Create new empty project → `Ctrl + N` / `Cmd + N`
+
+Presentation Mode Navigation
+
+When in presentation mode, you can navigate between slides in several ways:
+- Use the **arrow keys**
+- Click the **left mouse button** (right or left part of the screen)
+
+You can also jump directly to a specific slide using the following shortcut:
+
+- Press `Alt Gr`, then enter the **slide number**, then press `Enter`
+
+Example:
+
+`Alt Gr + 14 + Enter` → jumps directly to slide 14
+
+If the project has fewer than 14 slides, it will go to the last available slide.
+
+### Custom Markdown Features
+
+This project extends standard Markdown with custom syntax.
+
+**File Code Preview**
+
+You can display specific lines from a file using:
+```md
+  [code](file_path#start-end)
+```
+Example:
+```md
+  [code](./assets/test.py#3-6)
+```
+This will display lines 3 to 6 from test.py.
+
+**Auto-import local files (`?=` syntax)**
+
+Prefixing a local file reference with `?=` allows automatic importing into the `./assets` folder.
+
+Example:
+```md
+  ?=[code](c:\test.py#3-6)
+```
+This will:
+- Copy the file into ./assets
+- Then convert it into:
+```md
+  [code](./assets/test.py#3-6)
+```
+The same behavior applies to images:
+```md
+  ?=![cat](c:\cat.jpg)
+```
+Becomes:
+```md
+![cat](./assets/cat.jpg)
+```
+**Inline CSS Styling in Markdown**
+
+You can apply inline styling directly inside Markdown using a custom syntax:
+```md
+  <key="value">text</>
+```
+Where key corresponds to a CSS property defined in the configuration file.
+
+Example:
+```md
+<c="blue" p="50px" b="red">text</>
+```
+This creates a styled block:
+- Text color: blue
+- Padding: 50px
+- Background color: red
+
+**Markdown Configuration**
+
+The mapping between shorthand keys and CSS properties is defined in:
+
+`src/assets/markdown.config.json`
+
+Example:
+```json
+{
+    "c": "color",
+    "b": "background",
+    "ta": "text-align",
+    "fs": "font-size",
+    "p": "padding"
+}
+```
+You can extend this system by adding new mappings:
+```json
+"fd": "flex-direction"
+```
+This allows usage like:
+```md
+<fd="center">text</>
+```
+(assuming the key exists in the configuration file)
