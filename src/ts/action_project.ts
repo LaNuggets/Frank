@@ -2,8 +2,6 @@ import config from "../assets/markdown.config.json";
 
 const rules = config as unknown as Record<string, string>;
 
-const presentation_mode = async () => {}
-
 function convertCustomToHTML(text: string): string {
   const tagRegex = /<\/>|<([^>]+)>/g;
   const stack: string[] = [];
@@ -110,7 +108,6 @@ function convertHTMLToCustom(html: string): string {
 }
 
 export {
-    presentation_mode,
     convertCustomToHTML,
     convertHTMLToCustom
 }

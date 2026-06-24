@@ -14,11 +14,13 @@
     "core:menu:allow-new",
     "core:window:allow-destroy",
     "core:default",
+    "core:window:allow-set-fullscreen",
+    "core:window:allow-set-decorations",
 
     "opener:default",
 
     "fs:default",
-    
+
     "dialog:default",
     "dialog:allow-open"
   ]
