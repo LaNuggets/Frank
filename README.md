@@ -8,9 +8,6 @@ These features include:
 - **Displaying code snippets** within slides, with automatic scrolling when the code is longer than the available space (or without scrolling if the code fits). The code can be written directly in the slide or loaded from separate files.
 - **Executing commands** directly from a slide.
 
-### Collaborator
-[Aurelien DUGAST](https://github.com/LaNuggets/) and [Cassian JOLY](https://github.com/Cassian-J)
-
 ### File Architecture
 
 We use a specific file extension called `.codeprez`, which contains the following architecture:
@@ -161,3 +158,6 @@ This allows usage like:
 <fd="center">text</>
 ```
 (assuming the key exists in the configuration file)
+
+### Collaborator
+[Aurelien DUGAST](https://github.com/LaNuggets/) and [Cassian JOLY](https://github.com/Cassian-J)
