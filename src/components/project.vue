@@ -3,7 +3,6 @@
     import { useStore } from "../ts/store";
     import { readFile } from "../ts/action_file";
     import MarkdownIt from "markdown-it";
-    import { convertCustomToHTML } from "../ts/action_project";
     const store = useStore();
     const content = ref("");
 
@@ -20,8 +19,7 @@
     });
     const renderedPages = computed(() => {
         return pages.value.map(page => {
-            const html = convertCustomToHTML(page);
-            return md.render(html);
+            return md.render(page);
         });
     });
     watch(

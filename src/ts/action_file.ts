@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { useStore } from "./store";
-
+import {convertCustomToHTML} from './action_project'
 const createProject = async () => {
     const store = useStore();
 
@@ -41,6 +41,11 @@ const openProject = async () => {
 
 const saveProject = async () => {
     const store = useStore();
+    if (store.presentationPath!==null) {
+        const text = await readFile(store.presentationPath)
+        const html = convertCustomToHTML(text);
+        writeFile(store.presentationPath,html)
+    }
 
     return await invoke("zip_command", {
         zipPath: store.savePath,
@@ -56,7 +61,11 @@ const saveProject = async () => {
 
 const saveProjectAs = async () => {
     const store = useStore();
-
+    if (store.presentationPath!==null) {
+        const text = await readFile(store.presentationPath)
+        const html = convertCustomToHTML(text);
+        writeFile(store.presentationPath,html)
+    }
     const zipPath = await save({
         filters: [
             {
