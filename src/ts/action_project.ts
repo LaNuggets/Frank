@@ -1,8 +1,9 @@
 import config from "../assets/markdown.config.json";
+import { invoke } from "@tauri-apps/api/core";
 
 const rules = config as unknown as Record<string, string>;
 
-function convertCustomToHTML(text: string): string {
+const convertCustomToHTML=(text: string): string =>{
   const tagRegex = /<\/>|<([^>]+)>/g;
   const stack: string[] = [];
 
@@ -54,7 +55,7 @@ function convertCustomToHTML(text: string): string {
   return result;
 }
 
-function convertHTMLToCustom(html: string): string {
+const convertHTMLToCustom=(html: string): string=> {
   const reverseRules: Record<string, string> = Object.fromEntries(
     Object.entries(rules).map(([k, v]) => [v, k])
   );
@@ -107,7 +108,82 @@ function convertHTMLToCustom(html: string): string {
   return result;
 }
 
+
+const getPrismLangForExtension = (ext: string): string | null => {
+  const normalizedExt = ext.toLowerCase();
+
+  const mapping: Record<string, string> = {
+    js: "javascript",
+    jsx: "jsx",
+    ts: "typescript",
+    tsx: "tsx",
+    py: "python",
+    sh: "bash",
+    bash: "bash",
+    zsh: "bash",
+    rs: "rust",
+    java: "java",
+    c: "c",
+    cpp: "cpp",
+    h: "c",
+    hpp: "cpp",
+    css: "css",
+    html: "markup",
+    xml: "markup",
+    json: "json",
+    yml: "yaml",
+    yaml: "yaml",
+    md: "markdown",
+    txt: "text",
+  };
+
+  return mapping[normalizedExt] ?? null;
+};
+
+const preprocessMarkdown= async (content: string): Promise<string> => {
+  const regex = /\?=(\!\[.*?\]\((.*?)\)|\[(.*?)\]\((.*?)#(.*?)\))/g;
+
+  const matches = [...content.matchAll(regex)];
+
+  let result = content;
+
+  for (const match of matches) {
+    const fullMatch = match[0];
+
+    const isImage = fullMatch.includes("![");
+
+    if (isImage) {
+      const imagePath = match[2];
+
+      await invoke("copy_file", { filePath: imagePath });
+
+      const fileName = imagePath.split("\\").pop()?.split("/").pop();
+
+      result = result.replace(
+        fullMatch,
+        `![image](./assets/${fileName})`
+      );
+    } else {
+      const filePath = match[4];
+      const lines = match[5];
+
+      await invoke("copy_file", { filePath });
+
+      const fileName = filePath.split("\\").pop()?.split("/").pop();
+
+      result = result.replace(
+        fullMatch,
+        `[code](./assets/${fileName}#${lines})`
+      );
+    }
+  }
+
+  return result;
+}
+
 export {
     convertCustomToHTML,
-    convertHTMLToCustom
+    convertHTMLToCustom,
+    preprocessMarkdown,
+    getPrismLangForExtension
 }

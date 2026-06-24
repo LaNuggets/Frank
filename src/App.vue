@@ -11,7 +11,6 @@ import {useStore} from './ts/store.ts';
 const appWindow = getCurrentWindow();
 const activePanel = ref<"editor" | "author" | "css" | "presentation" | null>(null);
 const store = useStore();
-const isPresentation = ref<boolean>(false)
 function toggleEditor() {
   activePanel.value = activePanel.value === "editor" ? null : "editor";
 }
@@ -25,11 +24,10 @@ function toggleCss() {
 }
 
 async function togglePresentation() {
-  activePanel.value = isPresentation.value ? null : "presentation";
-  isPresentation.value = activePanel.value === "presentation";
-  if (isPresentation.value) store.currentSlide = 0 ;
-  await appWindow.setFullscreen(isPresentation.value)
-  await appWindow.setDecorations(!isPresentation.value)
+  activePanel.value = activePanel.value === "presentation" ? null : "presentation";
+  if (activePanel.value === "presentation") store.currentSlide = 0 ;
+  await appWindow.setFullscreen(activePanel.value === "presentation")
+  await appWindow.setDecorations(activePanel.value !== "presentation")
 }
 
 function handleShortcuts(e:KeyboardEvent){
@@ -205,11 +203,11 @@ onUnmounted(() => {
 <template class="no-scrollbar">
   <div class="app-layout">
     <main class="main">
-      <Project v-if="!isPresentation" />
+      <Project v-if="activePanel !== 'presentation'" />
       <Presentation v-else />
     </main>
 
-    <aside v-if="activePanel && activePanel !== 'presentation'"" class="side-panel">
+    <aside v-if="activePanel && activePanel !== 'presentation'" class="side-panel">
       <Pannel v-if="activePanel === 'editor'" :path="useStore().presentationPath" mode="custom" />
       <Pannel v-if="activePanel === 'author'" :path="useStore().configPath" mode="raw" />
       <Pannel v-if="activePanel === 'css'" :path="useStore().stylePath" mode="raw"/>
