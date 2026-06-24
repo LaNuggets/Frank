@@ -1,8 +1,9 @@
+
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
 import { useStore } from "../ts/store";
 import { readFile, readFileLines, buildFsPath } from "../ts/action_file";
-import {getPrismLangForExtension} from "../ts/action_project"
+import { getPrismLangForExtension } from "../ts/action_project";
 
 import MarkdownIt from "markdown-it";
 import Prism from "prismjs";
@@ -12,21 +13,11 @@ import "prismjs/components/prism-javascript";
 import "prismjs/components/prism-typescript";
 import "prismjs/components/prism-python";
 import "prismjs/components/prism-bash";
-
 import "prismjs/themes/prism-tomorrow.css";
 
 const store = useStore();
 const content = ref("");
-
-const readFileLinesTyped = async (
-  filename: string,
-  lines: string = ""
-): Promise<[string[], string | null]> => {
-  return await readFileLines(filename, lines);
-};
-
 const escapeMd = new MarkdownIt();
-
 const md = new MarkdownIt({
   html: true,
   linkify: true,
@@ -36,22 +27,22 @@ const md = new MarkdownIt({
     if (lang && Prism.languages[lang]) {
       const html = Prism.highlight(code, Prism.languages[lang], lang);
 
-      return `
-<pre class="code-block language-${lang}">
-  <code class="language-${lang}">${html}</code>
-</pre>`;
+      return `<pre class="code-block language-${lang}"><code class="language-${lang}">${html}</code></pre>`;
     }
 
-    return `
-<pre class="code-block">
-  <code>${escapeMd.utils.escapeHtml(code)}</code>
-</pre>`;
+    return `<pre class="code-block"><code>${escapeMd.utils.escapeHtml(code)}</code></pre>`;
   },
 });
 
+const readFileLinesTyped = async (
+  filename: string,
+  lines: string = ""
+): Promise<[string[], string | null]> => {
+  return await readFileLines(filename, lines);
+};
+
 md.renderer.rules.image = (tokens, idx) => {
   const token = tokens[idx];
-
   let src = token.attrGet("src") || "";
 
   if (!src.startsWith("http") && !src.startsWith("data:")) {
@@ -59,79 +50,60 @@ md.renderer.rules.image = (tokens, idx) => {
     src = convertFileSrc(fsPath);
   }
 
-  const alt = token.content || "";
-  return `<img src="${src}" alt="${alt}" />`;
+  return `<img src="${src}" alt="${token.content || ""}" />`;
 };
 
-md.renderer.rules.link_open = (tokens, idx, options, _env, self) => {
-  const token = tokens[idx];
-  const href = token.attrGet("href") || "";
-  const next = tokens[idx + 1];
-  const text = (next?.content || "").toLowerCase();
+async function preprocessCode(page: string): Promise<string> {
+  const regex = /\[Code\]\(([^)#]+)#?([^)]*)\)/g;
 
-  if (text === "code") {
-    const [file, range] = href.split("#");
+  const matches = [...page.matchAll(regex)];
+
+  for (const match of matches) {
+    const full = match[0];
+    const file = match[1];
+    const range = match[2] || "";
+
     const fullPath = buildFsPath(store.workspacePath!, file);
 
-    if (tokens[idx + 1]) {
-      tokens[idx + 1].content = "";
-    }
+    const [lines] = await readFileLinesTyped(fullPath, range);
 
-    readFileLinesTyped(fullPath, range || "").then(([lines]) => {
-      const ext = file.split(".").pop()?.toLowerCase() || "";
-      const lang = getPrismLangForExtension(ext) || "";
-      const code = lines.join("\n");
-      const html = md.options.highlight
-        ? md.options.highlight(code, lang, "")
-        : `
-<pre class="code-block${lang ? ` language-${lang}` : ""}">
-  <code${lang ? ` class="language-${lang}"` : ""}>${escapeMd.utils.escapeHtml(code)}</code>
+    const cleanLines = lines.map((line: string) =>
+      line
+        .replace(/,\s*$/, "")
+        .replace(/\r/g, "")
+        .trimEnd()
+    );
+
+    const code = cleanLines.join("\n");
+
+    const ext = file.split(".").pop()?.toLowerCase() || "";
+    const lang = getPrismLangForExtension(ext) || "js";
+
+    const highlighted =
+      lang && Prism.languages[lang]
+        ? Prism.highlight(code, Prism.languages[lang], lang)
+        : escapeMd.utils.escapeHtml(code);
+
+    const html = `
+<pre class="code-block language-${lang}">
+  <code class="language-${lang}">${highlighted}</code>
 </pre>`;
 
-      requestAnimationFrame(() => {
-        const el = document.querySelector(`[data-code="${href}"]`);
-        if (el) el.innerHTML = html;
-      });
-    });
-
-    return `<span data-code="${href}"></span>`;
+    page = page.replace(full, html);
   }
 
-  return self.renderToken(tokens, idx, options);
-};
-
+  return page;
+}
 
 const pages = computed(() => {
   return content.value
     .split(/\n\s*-{3,}\s*\n/g)
-    .map((p) => p.trim())
+    .map(p => p.trim())
     .filter(Boolean);
 });
 
-const applyStyle = async () => {
-    try {
-        const css = await readFile("style.css");
-
-        // I face an issue with background not applying to the slide
-        // This wierd pattern is for that 🤡
-        const bgMatch = css.match(/section\s*\{[^}]*background-color\s*:\s*([^;]+);/);
-        const bg = bgMatch ? bgMatch[1].trim() : "";
-
-        const existingStyle = document.getElementById("presentation-style");
-        if (existingStyle) existingStyle.remove();
-
-        const styleEl = document.createElement("style");
-        styleEl.id = "presentation-style";
-
-        // Same goes here background issue
-        styleEl.textContent = css + (bg ? `\n.slide { background-color: ${bg}; }` : "");
-        document.head.appendChild(styleEl);
-    } catch (e) {
-        console.log("erreur" + e);
-    }
-};
 const renderedPages = computed(() => {
-  return pages.value.map((page) => md.render(page));
+  return store.renderedSlides as string[];
 });
 
 watch(
@@ -146,20 +118,19 @@ watch(
     }
 
     content.value = await readFile(path);
-    await applyStyle();
 
-    const slidePages = content.value
-      .split(/\n\s*-{3,}\s*\n/g)
-      .map((p) => p.trim())
-      .filter(Boolean);
+    const slides = pages.value;
 
-    store.renderedSlides = slidePages.map((page) =>
-      md.render(page)
+    const processed = await Promise.all(
+      slides.map(async (s) => preprocessCode(s))
     );
+
+    store.renderedSlides = processed.map(s => md.render(s));
   },
   { immediate: true }
 );
 </script>
+
 
 <template>
     <div
