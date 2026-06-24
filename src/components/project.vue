@@ -2,7 +2,7 @@
 import { ref, watch, computed } from "vue";
 import { useStore } from "../ts/store";
 import { readFile, readFileLines, buildFsPath } from "../ts/action_file";
-import { getPrismLangForExtension ,loadConfigSlide} from "../ts/action_project";
+import { getPrismLangForExtension, loadConfigSlide } from "../ts/action_project";
 
 import MarkdownIt from "markdown-it";
 import Prism from "prismjs";
@@ -16,12 +16,15 @@ import "prismjs/themes/prism-tomorrow.css";
 
 const store = useStore();
 const content = ref("");
+
+// Markdown engine instance (used everywhere for rendering slides)
 const escapeMd = new MarkdownIt();
 const md = new MarkdownIt({
   html: true,
   linkify: true,
   typographer: true,
 
+  // Prism syntax highlighting hook
   highlight(code: string, lang: string): string {
     if (lang && Prism.languages[lang]) {
       const html = Prism.highlight(code, Prism.languages[lang], lang);
@@ -29,10 +32,16 @@ const md = new MarkdownIt({
       return `<pre class="code-block language-${lang}"><code class="language-${lang}">${html}</code></pre>`;
     }
 
+    // fallback when language is unknown
     return `<pre class="code-block"><code>${escapeMd.utils.escapeHtml(code)}</code></pre>`;
   },
 });
 
+/*
+  Small helper around readFileLines
+
+  (kept here because backend sometimes returns weird shapes)
+*/
 const readFileLinesTyped = async (
   filename: string,
   lines: string = ""
@@ -40,8 +49,12 @@ const readFileLinesTyped = async (
   return await readFileLines(filename, lines);
 };
 
+/*
+  Image override for Markdown
 
-
+  - local images → converted to Tauri file URL
+  - remote images → left untouched
+*/
 md.renderer.rules.image = (tokens, idx) => {
   const token = tokens[idx];
   let src = token.attrGet("src") || "";
@@ -54,6 +67,14 @@ md.renderer.rules.image = (tokens, idx) => {
   return `<img src="${src}" alt="${token.content || ""}" />`;
 };
 
+/*
+  Code preprocessing step
+
+  This is where we replace:
+  [Code](file.js#1-10)
+
+  → actual highlighted code block
+*/
 async function preprocessCode(page: string): Promise<string> {
   const regex = /\[Code\]\(([^)#]+)#?([^)]*)\)/g;
 
@@ -68,6 +89,12 @@ async function preprocessCode(page: string): Promise<string> {
 
     const [lines] = await readFileLinesTyped(fullPath, range);
 
+    /*
+      Clean-up step:
+      - remove trailing commas (common formatting issue)
+      - remove carriage returns
+      - trim useless spaces at line end
+    */
     const cleanLines = lines.map((line: string) =>
       line
         .replace(/,\s*$/, "")
@@ -77,9 +104,11 @@ async function preprocessCode(page: string): Promise<string> {
 
     const code = cleanLines.join("\n");
 
+    // detect language from file extension
     const ext = file.split(".").pop()?.toLowerCase() || "";
     const lang = getPrismLangForExtension(ext) || "js";
 
+    // highlight with Prism if possible
     const highlighted =
       lang && Prism.languages[lang]
         ? Prism.highlight(code, Prism.languages[lang], lang)
@@ -90,12 +119,18 @@ async function preprocessCode(page: string): Promise<string> {
   <code class="language-${lang}">${highlighted}</code>
 </pre>`;
 
+    // replace original markdown tag with real HTML
     page = page.replace(full, html);
   }
 
   return page;
 }
 
+/*
+  Split file into slides
+
+  Separator: "---"
+*/
 const pages = computed(() => {
   return content.value
     .split(/\n\s*-{3,}\s*\n/g)
@@ -103,36 +138,57 @@ const pages = computed(() => {
     .filter(Boolean);
 });
 
+/*
+  Final slides coming from store
+  (includes presentation mode already processed data)
+*/
 const renderedPages = computed(() => {
   return store.renderedSlides as string[];
 });
+
+/*
+  Inject global CSS dynamically
+
+  (used for slide theme + background fix)
+*/
 const applyStyle = async () => {
-    try {
-        const css = await readFile("style.css");
+  try {
+    const css = await readFile("style.css");
 
-        // I face an issue with background not applying to the slide
-        // This wierd pattern is for that 🤡
-        const bgMatch = css.match(/section\s*\{[^}]*background-color\s*:\s*([^;]+);/);
-        const bg = bgMatch ? bgMatch[1].trim() : "";
+    const bgMatch = css.match(/section\s*\{[^}]*background-color\s*:\s*([^;]+);/);
+    const bg = bgMatch ? bgMatch[1].trim() : "";
 
-        const existingStyle = document.getElementById("presentation-style");
-        if (existingStyle) existingStyle.remove();
+    const existingStyle = document.getElementById("presentation-style");
+    if (existingStyle) existingStyle.remove();
 
-        const styleEl = document.createElement("style");
-        styleEl.id = "presentation-style";
+    const styleEl = document.createElement("style");
+    styleEl.id = "presentation-style";
 
-        // Same goes here background issue
-        styleEl.textContent = css + (bg ? `\n.slide { background-color: ${bg}; }` : "");
-        document.head.appendChild(styleEl);
-    } catch (e) {
-        console.log("erreur" + e);
-    }
+    styleEl.textContent =
+      css + (bg ? `\n.slide { background-color: ${bg}; }` : "");
+
+    document.head.appendChild(styleEl);
+  } catch (e) {
+    console.log("style load error:", e);
+  }
 };
+
+/*
+  Main watcher:
+
+  Whenever project changes:
+  - load markdown file
+  - apply style
+  - preprocess code blocks
+  - render markdown
+  - inject cover slide + slides into store
+*/
 watch(
   () => [store.presentationPath, store.presentationVersion],
   async () => {
     const path = store.presentationPath;
 
+    // reset everything if no file
     if (!path) {
       content.value = "";
       store.renderedSlides = [];
@@ -141,13 +197,21 @@ watch(
 
     content.value = await readFile(path);
     await applyStyle();
+
+    // load cover slide (title + authors)
     const configSlide = await loadConfigSlide();
+
     const slides = pages.value;
+
+    // preprocess all code blocks first
     const processed = await Promise.all(
       slides.map((s) => preprocessCode(s))
     );
+
+    // then render markdown
     const finalSlides = processed.map((s) => md.render(s));
 
+    // inject cover slide as first slide
     store.renderedSlides = [
       configSlide,
       ...finalSlides

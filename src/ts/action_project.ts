@@ -3,10 +3,22 @@ import { invoke } from "@tauri-apps/api/core";
 import { useStore } from "./store";
 import { readFile } from "./action_file";
 
+/**
+ * CSS mapping rules used to convert custom markdown tags
+ * into real inline CSS styles.
+ */
 const rules = config as unknown as Record<string, string>;
 
-const convertCustomToHTML=(text: string): string =>{
+
+/**
+ * Convert custom tags like <color=value>text</> into HTML spans
+ * with inline styles.
+ */
+const convertCustomToHTML = (text: string): string => {
+
+  // detect opening tags and closing </> tags
   const tagRegex = /<\/>|<([^>]+)>/g;
+
   const stack: string[] = [];
 
   let result = "";
@@ -14,11 +26,14 @@ const convertCustomToHTML=(text: string): string =>{
   let match: RegExpExecArray | null;
 
   while ((match = tagRegex.exec(text)) !== null) {
+
+    // keep text between tags
     result += text.slice(lastIndex, match.index);
     lastIndex = tagRegex.lastIndex;
 
     const token = match[0];
 
+    // closing tag → close last opened span
     if (token === "</>") {
       const tag = stack.pop();
       if (tag) result += `</${tag}>`;
@@ -28,6 +43,7 @@ const convertCustomToHTML=(text: string): string =>{
     const inside = match[1];
     let style = "";
 
+    // convert custom attributes into CSS rules
     const attrRegex = /(\w+)=["']([^"']+)["']/g;
 
     let m: RegExpExecArray | null;
@@ -43,26 +59,35 @@ const convertCustomToHTML=(text: string): string =>{
       }
     }
 
+    // open span with computed style
     result += `<span style="${style.trim()}">`;
     stack.push("span");
   }
 
   result += text.slice(lastIndex);
 
+  // close any unclosed tags safely
   while (stack.length) {
     result += `</span>`;
     stack.pop();
   }
 
   return result;
-}
+};
 
-const convertHTMLToCustom=(html: string): string=> {
+
+/**
+ * Convert HTML back to custom syntax
+ * (used when saving or exporting content)
+ */
+const convertHTMLToCustom = (html: string): string => {
+
   const reverseRules: Record<string, string> = Object.fromEntries(
     Object.entries(rules).map(([k, v]) => [v, k])
   );
 
   const divRegex = /<span\s+style="([^"]*?)">|<\/span>/g;
+
   const stack: string[] = [];
 
   let result = "";
@@ -70,24 +95,24 @@ const convertHTMLToCustom=(html: string): string=> {
   let match: RegExpExecArray | null;
 
   while ((match = divRegex.exec(html)) !== null) {
+
     result += html.slice(lastIndex, match.index);
     lastIndex = divRegex.lastIndex;
 
+    // closing span → custom closing tag
     if (match[0] === "</span>") {
       const tag = stack.pop();
-
       if (tag) result += "</>";
-
       continue;
     }
 
     const style = match[1];
-
     let attrs = "";
 
+    // convert CSS back to custom attributes
     for (const [cssKey, customKey] of Object.entries(reverseRules)) {
-      const regex = new RegExp(`${cssKey}\\s*:\\s*([^;]+)`);
 
+      const regex = new RegExp(`${cssKey}\\s*:\\s*([^;]+)`);
       const m = style.match(regex);
 
       if (m) {
@@ -96,22 +121,27 @@ const convertHTMLToCustom=(html: string): string=> {
     }
 
     result += `<${attrs.trim()}>`;
-
     stack.push("span");
   }
 
   result += html.slice(lastIndex);
 
+  // close remaining tags safely
   while (stack.length) {
     result += "</>";
     stack.pop();
   }
 
   return result;
-}
+};
 
 
+/**
+ * Map file extensions to Prism.js language identifiers
+ * used for syntax highlighting
+ */
 const getPrismLangForExtension = (ext: string): string | null => {
+
   const normalizedExt = ext.toLowerCase();
 
   const mapping: Record<string, string> = {
@@ -142,7 +172,14 @@ const getPrismLangForExtension = (ext: string): string | null => {
   return mapping[normalizedExt] ?? null;
 };
 
-const preprocessMarkdown= async (content: string): Promise<string> => {
+
+/**
+ * Preprocess markdown content before rendering:
+ * - handles image imports
+ * - handles code file imports
+ */
+const preprocessMarkdown = async (content: string): Promise<string> => {
+
   const regex = /\?=(\!\[.*?\]\((.*?)\)|\[(.*?)\]\((.*?)#(.*?)\))/g;
 
   const matches = [...content.matchAll(regex)];
@@ -150,11 +187,13 @@ const preprocessMarkdown= async (content: string): Promise<string> => {
   let result = content;
 
   for (const match of matches) {
-    const fullMatch = match[0];
 
+    const fullMatch = match[0];
     const isImage = fullMatch.includes("![");
 
+    // image import handling
     if (isImage) {
+
       const imagePath = match[2];
 
       await invoke("copy_file", { filePath: imagePath });
@@ -165,7 +204,10 @@ const preprocessMarkdown= async (content: string): Promise<string> => {
         fullMatch,
         `![image](./assets/${fileName})`
       );
+
     } else {
+
+      // code import handling
       const filePath = match[4];
       const lines = match[5];
 
@@ -181,12 +223,17 @@ const preprocessMarkdown= async (content: string): Promise<string> => {
   }
 
   return result;
-}
+};
 
+
+/**
+ * Generate the cover slide from config.json
+ */
 const generateCoverSlide = (config: {
   title?: string;
   authors?: string[];
 }): string => {
+
   const title = config.title || "Untitled";
   const authors = (config.authors || []).join(", ");
 
@@ -231,26 +278,38 @@ const generateCoverSlide = (config: {
 `;
 };
 
+
+/**
+ * Load config.json and generate the first slide (cover slide)
+ */
 const loadConfigSlide = async (): Promise<string> => {
-  const store = useStore()
+
+  const store = useStore();
+
   try {
+
     if (!store.configPath) return "";
 
     const raw = await readFile(store.configPath);
     const config = JSON.parse(raw);
 
     return generateCoverSlide(config);
+
   } catch (e) {
     console.log("config error:", e);
     return "";
   }
 };
 
+
+/**
+ * Exports used by the renderer and project system
+ */
 export {
-    convertCustomToHTML,
-    convertHTMLToCustom,
-    preprocessMarkdown,
-    getPrismLangForExtension,
-    generateCoverSlide,
-    loadConfigSlide
-}
+  convertCustomToHTML,
+  convertHTMLToCustom,
+  preprocessMarkdown,
+  getPrismLangForExtension,
+  generateCoverSlide,
+  loadConfigSlide
+};
