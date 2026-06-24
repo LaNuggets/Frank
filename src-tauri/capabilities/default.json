@@ -6,11 +6,19 @@
     "main"
   ],
   "permissions": [
-    "core:default",
-    "opener:default",
-    "fs:default",
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize",
     "core:window:allow-close",
+    "core:window:allow-start-dragging",
+    "core:menu:default",
+    "core:menu:allow-new",
     "core:window:allow-destroy",
+    "core:default",
+
+    "opener:default",
+
+    "fs:default",
+    
     "dialog:default",
     "dialog:allow-open"
   ]

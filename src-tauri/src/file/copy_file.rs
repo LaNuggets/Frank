@@ -10,7 +10,7 @@ pub fn copy_file(file_path: String) -> Result<(), AppError> {
 
     let file_name = fp
         .file_name()
-        .ok_or_else(|| AppError::InvalidFileName(file_path))?;
+        .ok_or_else(|| AppError::InvalidFileName(file_path.clone()))?;
 
     let path = get_tmp_folder_path();
 

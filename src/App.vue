@@ -1,182 +1,212 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
-import { invoke } from "@tauri-apps/api/core";
+import { Menu, Submenu, MenuItem  } from '@tauri-apps/api/menu';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { onMounted, ref , onUnmounted} from 'vue';
+import { openProject, saveProject, saveProjectAs , createProject,clearTmpFolder} from './ts/action_file.ts';
+import { presentation_mode } from './ts/action_project.ts';
+import Pannel from './components/pannel.vue';
+import Project from './components/project.vue';
+import {useStore} from './ts/store.ts';
 
-import SaveAs from "./components/SaveAs.vue";
-import Save from "./components/Save.vue";
+const appWindow = getCurrentWindow();
+const activePanel = ref<"editor" | "author" | "css" | null>(null);
 
-import OpenProject from "./components/OpenProject.vue";
-import ReadFile from "./components/ReadFile.vue";
-import Writefile from "./components/WriteFile.vue";
-import Tree from "./components/Tree.vue";
-import CreateProject from "./components/CreateProject.vue";
-import ReadFileLines from "./components/ReadFileLines.vue";
+function toggleEditor() {
+  activePanel.value = activePanel.value === "editor" ? null : "editor";
+}
 
+function toggleAuthor() {
+  activePanel.value = activePanel.value === "author" ? null : "author";
+}
 
-// Quick reminder off how the app save is content.
-// The logic is has follow; the user open a project, that's will create a tmp folder.
-// This tmp folder is the active workspace. That's where evreything is modified at first.
-// Then when the user gonna save is project with the 'zip_command',
-// this will take the tmp folder content and zip it to the given path.
+function toggleCss() {
+  activePanel.value = activePanel.value === "css" ? null : "css";
+}
 
-const workspace = ref<string | null>(null);
+function handleShortcuts(e:KeyboardEvent){
+  //fichier part
+  if ((e.ctrlKey ||e.metaKey) && e.key.toLowerCase()==="n"){
+    e.preventDefault();
+    createProject();
+  }
+  if ((e.ctrlKey ||e.metaKey) && e.key.toLowerCase()==="o"){
+    e.preventDefault();
+    openProject();
+  }
+  if ((e.ctrlKey ||e.metaKey) && e.key.toLowerCase()==="s"){
+    e.preventDefault();
+    saveProject();
+  }
+  if ((e.ctrlKey ||e.metaKey) && e.shiftKey && e.key.toLowerCase()==="s"){
+    e.preventDefault();
+    saveProjectAs();
+  }
+  if (e.altKey && e.key.toLowerCase()==="p"){
+    e.preventDefault();
+    activePanel.value = null;
+    presentation_mode();
+  }
+  //edition part
+  if (e.altKey && e.key.toLowerCase()==="m"){
+    e.preventDefault();
+    toggleEditor();
+  }
+  if (e.altKey && e.key.toLowerCase()==="a"){
+    e.preventDefault();
+    toggleAuthor();
+  }
+  if (e.altKey && e.key.toLowerCase()==="c"){
+    e.preventDefault();
+    toggleCss();
+  }
+}
 
+const CreateMenu = async () => {
+  const FileMenu = await Submenu.new({
+    text: 'Fichier',
+    items: [
+      await MenuItem.new({
+        id: 'quit',
+        text: 'Fermer',
+        action: () => {
+          useStore().workspacePath = "";
+          clearTmpFolder();
+          appWindow.close();
+        },
+      }),
+      await MenuItem.new({
+        id: 'new',
+        text: 'Nouveau',
+        action: () => {
+          createProject();
+        },
+        accelerator: 'CmdOrCtrl+N',
+      }),
+      await MenuItem.new({
+        id: 'open',
+        text: 'Ouvrir',
+        action: () => {
+          openProject();
+        },
+        accelerator: 'CmdOrCtrl+O',
+      }),
+      await MenuItem.new({
+        id: 'save',
+        text: 'Enregistrer',
+        action: () => {
+          saveProject();
+        },
+        accelerator: 'CmdOrCtrl+S',
+      }),
+      await MenuItem.new({
+        id: 'save as',
+        text: 'Enregistrer sous',
+        action: () => {
+          saveProjectAs();
+        },
+        accelerator: 'CmdOrCtrl+Shift+S',
+      }),
+      await MenuItem.new({
+        id: 'presentation',
+        text: 'Présentation',
+        action: () => {
+          activePanel.value = null;
+          presentation_mode();
+        },
+        accelerator: 'Alt+P',
+      }),
+    ],
+  });
+  const editmenu = await Submenu.new({
+    text: 'Édition',
+    items: [
+      await MenuItem.new({
+        id: 'toggleEditor',
+        text: 'Afficher/Masquer l\'éditeur',
+        action: toggleEditor,
+        accelerator: 'Alt+M',
+      }),
+      await MenuItem.new({
+        id: 'Config',
+        text: 'Afficher/Masquer les Autheurs',
+        action: toggleAuthor,
+        accelerator: 'Alt+A',
+      }),
+      await MenuItem.new({
+        id: 'Css',
+        text: 'Afficher/Masquer les css',
+        action: toggleCss,
+        accelerator: 'Alt+C',
+      })
+    ],
+  });
+  const menu = await Menu.new({
+    items: [FileMenu, editmenu],
+  });
 
-// This part is for clearing the tmp file when the close button is pressed.
-// But we can not be sure that the app will close on this way.
-// So on the rust side, the same function is call on app lunch.
-const folder = ref();
-onMounted(async () => {
-    await getCurrentWindow().onCloseRequested(async () => {
-        try {
-            folder.value = await invoke<string[]>("clear_tmp_folder");
-        } catch (e) {
-            folder.value = e;
-        }
-    });
+  await menu.setAsAppMenu();
+}
+
+CreateMenu();
+onMounted(() => {
+  window.addEventListener('keydown', handleShortcuts);
 });
 
-
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleShortcuts);
+});
 </script>
 
 <template>
-  <main class="container">
-    <h1>Welcome to Frank</h1>
-    <CreateProject />
+  <div class="app-layout">
+    <main class="main">
+      <Project />
+    </main>
 
-    <SaveAs />
-    <Save />
-
-    <OpenProject />
-
-    <ReadFile />
-    <ReadFileLines />
-    <Writefile />
-
-    <Tree />
-  </main>
+    <aside v-if="activePanel" class="side-panel">
+      <Pannel v-if="activePanel === 'editor'" :path="useStore().presentationPath" mode="custom" />
+      <Pannel v-if="activePanel === 'author'" :path="useStore().configPath" mode="raw" />
+      <Pannel v-if="activePanel === 'css'" :path="useStore().stylePath" mode="raw"/>
+    </aside>
+  </div>
 </template>
 
 <style scoped>
-.logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
+.app-layout {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
 }
 
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #249b73);
+.main {
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 100%;
+
+  overflow-y: auto;
+
+  overscroll-behavior: contain;
 }
 
-</style>
-<style>
-:root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
+.side-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
 
-  color: #0f0f0f;
-  background-color: #f6f6f6;
+  width: 50%;
+  height: 100%;
+  overflow-y: auto;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
-}
+  backdrop-filter: blur(4px);
+  border-left: 1px solid #444;
 
-.container {
-  margin: 0;
-  padding-top: 10vh;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  text-align: center;
+
+  overscroll-behavior: contain;
 }
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
-}
-
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
-}
-
-.row {
-  display: flex;
-  justify-content: center;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
-}
-
-h1 {
-  text-align: center;
-}
-
-input,
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  color: #0f0f0f;
-  background-color: #ffffff;
-  transition: border-color 0.25s;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
-}
-
-button {
-  cursor: pointer;
-}
-
-button:hover {
-  border-color: #396cd8;
-}
-button:active {
-  border-color: #396cd8;
-  background-color: #e8e8e8;
-}
-
-input,
-button {
-  outline: none;
-}
-
-#greet-input {
-  margin-right: 5px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #f6f6f6;
-    background-color: #2f2f2f;
-  }
-
-  a:hover {
-    color: #24c8db;
-  }
-
-  input,
-  button {
-    color: #ffffff;
-    background-color: #0f0f0f98;
-  }
-  button:active {
-    background-color: #0f0f0f69;
-  }
-}
-
 </style>
