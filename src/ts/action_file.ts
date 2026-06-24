@@ -33,9 +33,9 @@ const openProject = async () => {
 
     store.setWorkspacePath(workspace);
     store.setPresentationPath("")
-    store.setPresentationPath(`${workspace}/presentation.md`);
-    store.setConfigPath(`${workspace}/config.json`);
-    store.setStylePath(`${workspace}/style.css`);
+    store.setPresentationPath(`presentation.md`);
+    store.setConfigPath(`config.json`);
+    store.setStylePath(`style.css`);
     return workspace;
 }
 
@@ -93,15 +93,15 @@ const saveProjectAs = async () => {
     return result;
 }
 
-const readFile = async (path: string) => {
+const readFile = async (fileName: string) => {
     return await invoke<string>("read_file", {
-        path,
+        fileName,
     });
 }
 
-const writeFile = async (path: string, content: string) => {
+const writeFile = async (fileName: string, content: string) => {
     return await invoke("write_file", {
-        path,
+        fileName,
         content,
     });
 }
