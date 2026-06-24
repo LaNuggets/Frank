@@ -54,6 +54,9 @@ const currentSlide = computed(() =>
   width: 100%;
   height: 100%;
 }
+.slide > div {
+  height: 100%;
+}
 
 /* slide content spacing */
 .currentslide {

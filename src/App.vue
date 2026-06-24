@@ -228,7 +228,7 @@ const handlePresentationClick = (e: MouseEvent) => {
 /*
   Native app menu (Tauri).
 
-  This is basically your top menu bar.
+  This is the top menu bar.
 */
 const CreateMenu = async () => {
 

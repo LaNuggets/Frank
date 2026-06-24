@@ -248,6 +248,11 @@ watch(
         -ms-overflow-style: none;
     }
 
+        /* This is because a div between slide and pre is created which makes pre no longer have a good height */
+    .slide > div {
+        height: 100%;
+    }
+
     .slide::-webkit-scrollbar {
         display: none;
     }
