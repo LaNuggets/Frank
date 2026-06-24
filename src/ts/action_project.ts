@@ -27,13 +27,11 @@ function convertCustomToHTML(text: string): string {
     const inside = match[1];
     let style = "";
 
-    const attrs = inside.split(/\s+/);
+    const attrRegex = /(\w+)=["']([^"']+)["']/g;
 
-    for (const attr of attrs) {
-      const m = attr.match(/(\w+)=["']?(.*?)["']?$/);
+    let m: RegExpExecArray | null;
 
-      if (!m) continue;
-
+    while ((m = attrRegex.exec(inside)) !== null) {
       const customKey = m[1];
       const value = m[2];
 

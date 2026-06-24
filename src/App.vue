@@ -4,10 +4,9 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { onMounted, ref , onUnmounted} from 'vue';
 import { openProject, saveProject, saveProjectAs , createProject,clearTmpFolder} from './ts/action_file.ts';
 import { presentation_mode } from './ts/action_project.ts';
-import pannel from './components/pannel.vue';
+import Pannel from './components/pannel.vue';
 import Project from './components/project.vue';
 import {useStore} from './ts/store.ts';
-import Pannel from './components/pannel.vue';
 
 const appWindow = getCurrentWindow();
 const activePanel = ref<"editor" | "author" | "css" | null>(null);
@@ -44,6 +43,7 @@ function handleShortcuts(e:KeyboardEvent){
   }
   if (e.altKey && e.key.toLowerCase()==="p"){
     e.preventDefault();
+    activePanel.value = null;
     presentation_mode();
   }
   //edition part

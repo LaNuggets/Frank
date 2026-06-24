@@ -19,12 +19,7 @@ watch(
     }
 
     const raw = await readFile(path);
-
-    if (props.mode === "custom") {
-      text.value = convertHTMLToCustom(raw);
-    } else {
-      text.value = raw;
-    }
+    text.value = props.mode === "custom" ? convertHTMLToCustom(raw) : raw;
   },
   { immediate: true }
 );

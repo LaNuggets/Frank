@@ -14,7 +14,7 @@ const createProject = async () => {
 
 const openProject = async () => {
     const store = useStore();
-
+    store.presentationVersion++
     const file = await open({
         multiple: false,
         filters: [
@@ -46,7 +46,7 @@ const saveProject = async () => {
         const html = convertCustomToHTML(text);
         writeFile(store.presentationPath,html)
     }
-
+    store.presentationVersion++
     return await invoke("zip_command", {
         zipPath: store.savePath,
         filesName: [

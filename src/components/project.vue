@@ -23,17 +23,18 @@
         });
     });
     watch(
-        () => store.presentationPath,
-        async (path) => {
+        () =>  [store.presentationPath,store.presentationVersion],
+        async () => {
+            const path = store.presentationPath
             if (!path) {
-                content.value = "";
-                return;
+            content.value = "";
+            return;
             }
 
             content.value = await readFile(path);
         },
         { immediate: true }
-    );
+        );
 </script>
 
 <template>
