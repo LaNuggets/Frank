@@ -237,26 +237,24 @@ const generateCoverSlide = (config: {
   const authors = (config.authors || []).join(", ");
 
   return `
-<section class="cover-slide" style="
+<article class="cover-slide" style="
   width: 100vw;
   height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
   box-sizing: border-box;
-  padding: 0 10%;
+  font-family: Arial, Helvetica, sans-serif;
 ">
 
   <div style="
     width: 100%;
-    max-width: 900px;
+    max-width:90%;
   ">
 
     <h1 style="
       font-size: 3rem;
-      margin: 0;
       width: 100%;
-      text-align: left;
     ">
       ${title}
     </h1>
@@ -266,14 +264,12 @@ const generateCoverSlide = (config: {
       font-size: 1.2rem;
       opacity: 0.7;
       width: 100%;
-      text-align: left;
+      text-align:center;
     ">
       ${authors}
     </p>
-
   </div>
-
-</section>
+</article>
 `;
 };
 
