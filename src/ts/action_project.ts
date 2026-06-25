@@ -153,7 +153,6 @@ const getPrismLangForExtension = (ext: string): string | null => {
     sh: "bash",
     bash: "bash",
     zsh: "bash",
-    rs: "rust",
     java: "java",
     c: "c",
     cpp: "cpp",
@@ -169,7 +168,7 @@ const getPrismLangForExtension = (ext: string): string | null => {
     txt: "text",
   };
 
-  return mapping[normalizedExt] ?? null;
+  return mapping[normalizedExt] ?? "javascript";
 };
 
 
