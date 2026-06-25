@@ -6,7 +6,6 @@ The goal of this project, named **Frank**, is to build an application that allow
 
 These features include:
 - **Displaying code snippets** within slides, with automatic scrolling when the code is longer than the available space (or without scrolling if the code fits). The code can be written directly in the slide or loaded from separate files.
-- **Executing commands** directly from a slide.
 
 ### File Architecture
 
