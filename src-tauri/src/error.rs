@@ -26,6 +26,9 @@ pub enum AppError {
 
     #[error("Missing main files; at least one of the 3 main files is not present. Be sure that you have: style.css, presentation.md, and config.json")]
     MissingMainFiles,
+
+    #[error("Wrong path format")]
+    InvalidPath,
 }
 
 impl From<AppError> for InvokeError {

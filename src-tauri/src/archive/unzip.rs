@@ -27,7 +27,12 @@ pub fn unzip(zip_path: String) -> Result<String, AppError> {
 
     for i in 0..archive.len() {
         let mut entry = archive.by_index(i)?;
-        let out_path = extraction_dir.join(entry.name());
+        // let out_path = extraction_dir.join(entry.name());
+        let out_path = match entry.enclosed_name() {
+            Some(path) => extraction_dir.join(path),
+            None => return Err(AppError::InvalidPath),
+        };
+
         if entry.is_dir() {
             fs::create_dir_all(&out_path)?;
         } else {

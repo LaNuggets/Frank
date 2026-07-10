@@ -1,5 +1,6 @@
 use std::{fs::{File}, io::{self, Read, Write}, path::Path};
 use std::path::PathBuf;
+use tauri::App;
 use zip::{ZipWriter, CompressionMethod, write::{ExtendedFileOptions, FileOptions}};
 
 use crate::helper::get_tmp_folder_path;
@@ -34,7 +35,7 @@ pub fn zip(zip_path: String, files_and_folders_name: Vec<String>) -> Result<(), 
         return Err(AppError::MissingMainFiles);
     }
 
-    let (files_path, folders_path) = complete_file_and_folder_path(files, folders);
+    let (files_path, folders_path) = complete_file_and_folder_path(files, folders)?;
 
     zip_files(&mut archive, &options, files_path)?;
     zip_folders(&mut archive, &options, folders_path)?;
@@ -61,11 +62,21 @@ fn check_main_file_validity(files: &Vec<String>) -> bool {
     true
 }
 
-fn complete_file_and_folder_path(files: Vec<String>, folders: Vec<String>) -> (Vec<PathBuf>, Vec<PathBuf>) {
+fn complete_file_and_folder_path(files: Vec<String>, folders: Vec<String>) -> Result<(Vec<PathBuf>, Vec<PathBuf>), AppError> {
     let tmp_folder = get_tmp_folder_path();
 
     let mut files_path: Vec<PathBuf> = vec![];
     let mut folders_path: Vec<PathBuf> = vec![];
+
+    let base = std::fs::canonicalize(&tmp_folder)?;
+
+    let candidate = std::fs::canonicalize(base.join(&file))?;
+
+    if !candidate.starts_with(&base) {
+        return Err(AppError::InvalidPath);
+    }
+
+    files_path.push(candidate);
 
     for file in files {
         files_path.push(Path::new(&tmp_folder).join(file));
@@ -74,7 +85,7 @@ fn complete_file_and_folder_path(files: Vec<String>, folders: Vec<String>) -> (V
         folders_path.push(Path::new(&tmp_folder).join(folder));
     }
 
-    (files_path, folders_path)
+    Ok((files_path, folders_path))
 }
 
 
